@@ -339,16 +339,16 @@ static void init() {
 	
 	res_ap_logo = gbitmap_create_with_resource(RESOURCE_ID_IMG_AP_LOGO);
 	
-	res_batt_10  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_1);
-	res_batt_20  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_2);
-	res_batt_30  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_3);
-	res_batt_40  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_4);
-	res_batt_50  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_5);
-	res_batt_60  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_6);
-	res_batt_70  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_7);
-	res_batt_80  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_8);
-	res_batt_90  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_9);
-	res_batt_100 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_10);
+	res_batt_10  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_1);
+	res_batt_20  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_2);
+	res_batt_30  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_3);
+	res_batt_40  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_4);
+	res_batt_50  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_5);
+	res_batt_60  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_6);
+	res_batt_70  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_7);
+	res_batt_80  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_8);
+	res_batt_90  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_9);
+	res_batt_100 = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_10);
 
 	res_digit_0 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_0);
 	res_digit_1 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_1);
