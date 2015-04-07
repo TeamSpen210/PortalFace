@@ -1,0 +1,142 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "TeamSpen210",
+    "longName": "Test Chamber Sign",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "images/logo_aperture.png",
+                "name": "IMG_AP_LOGO",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_9.png",
+                "name": "IMG_APER_9",
+                "type": "png"
+            },
+            {
+                "file": "images/num_9.png",
+                "name": "IMG_NUM_9",
+                "type": "png"
+            },
+            {
+                "file": "images/num_8.png",
+                "name": "IMG_NUM_8",
+                "type": "png"
+            },
+            {
+                "file": "images/num_7.png",
+                "name": "IMG_NUM_7",
+                "type": "png"
+            },
+            {
+                "file": "images/icon.png",
+                "menuIcon": true,
+                "name": "APP_ICON",
+                "type": "png"
+            },
+            {
+                "file": "images/num_6.png",
+                "name": "IMG_NUM_6",
+                "type": "png"
+            },
+            {
+                "file": "images/num_5.png",
+                "name": "IMG_NUM_5",
+                "type": "png"
+            },
+            {
+                "file": "images/num_4.png",
+                "name": "IMG_NUM_4",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_8.png",
+                "name": "IMG_APER_8",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_7.png",
+                "name": "IMG_APER_7",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_6.png",
+                "name": "IMG_APER_6",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_5.png",
+                "name": "IMG_APER_5",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_4.png",
+                "name": "IMG_APER_4",
+                "type": "png"
+            },
+            {
+                "file": "images/num_3.png",
+                "name": "IMG_NUM_3",
+                "type": "png"
+            },
+            {
+                "file": "images/num_2.png",
+                "name": "IMG_NUM_2",
+                "type": "png"
+            },
+            {
+                "file": "images/num_1.png",
+                "name": "IMG_NUM_1",
+                "type": "png"
+            },
+            {
+                "file": "images/num_0.png",
+                "name": "IMG_NUM_0",
+                "type": "png"
+            },
+            {
+                "file": "images/power_on.png",
+                "name": "IMG_POWER_ON",
+                "type": "png"
+            },
+            {
+                "file": "images/blue_off.png",
+                "name": "IMG_BLUE_OFF",
+                "type": "png"
+            },
+            {
+                "file": "images/blue_on.png",
+                "name": "IMG_BLUE_ON",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_3.png",
+                "name": "IMG_APER_3",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_1.png",
+                "name": "IMG_APER_1",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_2.png",
+                "name": "IMG_APER_2",
+                "type": "png"
+            }
+        ]
+    },
+    "sdkVersion": "2",
+    "shortName": "Test Sign",
+    "uuid": "2f03bfbc-a731-4e83-84af-3642e6ecd52d",
+    "versionCode": 1,
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": true
+    }
+}
