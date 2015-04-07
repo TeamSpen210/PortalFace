@@ -10,6 +10,7 @@ static TextLayer *box_date;
 static TextLayer *hour_text;
 
 static Layer *secs_layer;
+static Layer *icon_bg;
 static BitmapLayer *min_dig_ten;
 static BitmapLayer *min_dig_one;
 
@@ -43,6 +44,21 @@ static GBitmap *res_ap_logo;
 static bool charge_vibe_done = 1;
 static bool bluetooth_vibe_done = 1;
 
+byte ICO_IDS[] = {
+	RESOURCE_ID_TS_ICO_1,
+	RESOURCE_ID_TS_ICO_2,
+	RESOURCE_ID_TS_ICO_3,
+	RESOURCE_ID_TS_ICO_4,
+	RESOURCE_ID_TS_ICO_5,
+	RESOURCE_ID_TS_ICO_6,
+	RESOURCE_ID_TS_ICO_7,
+	RESOURCE_ID_TS_ICO_8,
+	RESOURCE_ID_TS_ICO_9,
+	RESOURCE_ID_TS_ICO_10,
+	RESOURCE_ID_TS_ICO_11,
+	RESOURCE_ID_TS_ICO_12
+}
+
 static void initialise_ui(void) {
 	main_win = window_create();
 	window_set_fullscreen(main_win, true);
@@ -62,10 +78,6 @@ static void initialise_ui(void) {
 	bitmap_layer_set_bitmap(ap_logo, res_ap_logo);
 	layer_add_child(window_get_root_layer(main_win), (Layer *)ap_logo);
 
-	// battery background
-	//box_bg_batt = inverter_layer_create(GRect(93, 108, 36, 36));
-	//layer_add_child(window_get_root_layer(main_win), (Layer *)box_bg_batt);
-
 	// weekday textbox
 	box_date = text_layer_create(GRect(54, 107, 36, 36));
 	text_layer_set_background_color(box_date, GColorWhite);
@@ -74,17 +86,12 @@ static void initialise_ui(void) {
 	text_layer_set_font(box_date, date_font);
 	layer_add_child(window_get_root_layer(main_win), (Layer *)box_date);
 
-	// bluetooth background
-	//box_bg_blue = inverter_layer_create(GRect(13, 108, 36, 36));
-	//layer_add_child(window_get_root_layer(main_win), (Layer *)box_bg_blue);
-
-	// icon border
-	//box_border = inverter_layer_create(GRect(10, 113-5, 120, 40));
-	//layer_add_child(window_get_root_layer(main_win), (Layer *)box_border);
-  
 	// seconds layer
-	secs_layer = layer_create(GRect(10, 85, 123, 150+32+1));
+	secs_layer = layer_create(GRect(10, 85, 123, 20));
 	layer_add_child(window_get_root_layer(main_win), (Layer *)secs_layer);
+	
+	icon_bg = layer_create(GRect(160, 110, 123, 32));
+	layer_add_child(window_get_root_layer(main_win), (Layer *)icon_bg);
 		
 	// minute tens digit
 	min_dig_ten = bitmap_layer_create(GRect(71 - 32 - 2, 5, 32, 80));
@@ -104,8 +111,8 @@ static void initialise_ui(void) {
 	layer_add_child(window_get_root_layer(main_win), (Layer *)hour_text);
 }
 
-static void destroy_ui(void) {
-	window_destroy(main_win);
+static void handle_window_unload(Window* window) {
+  window_destroy(main_win);
 	
 	bitmap_layer_destroy(box_blue);
 	bitmap_layer_destroy(box_batt);
@@ -148,31 +155,28 @@ static void destroy_ui(void) {
 	gbitmap_destroy(res_batt_100);
 }
 
-static void handle_window_unload(Window* window) {
-  destroy_ui();
-}
-
-static void draw_seconds(struct Layer *layer, GContext *ctx){
+static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	// Draw the seconds bar-graph.
 	graphics_context_set_stroke_color(ctx, GColorBlack);
 	graphics_draw_line(ctx, GPoint(0,0), GPoint(122, 0));
 	
 	graphics_draw_line(ctx, GPoint(0, 20), GPoint(122, 20));
 	
-	// Bluetooth
-	graphics_draw_rect(ctx, GRect(14-12, 110-87, 36, 36));
-	
-	//  Weekday
-	graphics_draw_rect(ctx, GRect(53-10, 110-87, 36, 36));
-	
-	// Battery
-	graphics_draw_rect(ctx, GRect(96-12, 110-87, 36, 36));
 	
 	time_t temp = time(NULL); 
 	struct tm *cur_time = localtime(&temp);
 	
-	for (int i = 2; i <= (cur_time->tm_sec * 2); i+=2) {
+	for (int i = 2; i <= (cur_time->tm_sec * 2); i += 2) {
 		graphics_draw_line(ctx, GPoint(i, 4), GPoint(i, 12));
+	}
+}
+
+static void draw_icon_bg(struct Layer *layer, GContext *ctx) {
+	// Draw all the borders around the icons.
+	for (int x = 0; x <= 4; x += 1) {
+		for (int y = 0; y <= 1; x += 1) {
+			graphics_draw_rect(ctx, GRect(x*18, y*18, 18, 18));
+		}
 	}
 }
 
@@ -182,6 +186,7 @@ void show_main_window(void) {
 		.unload = handle_window_unload,
 	});
 	layer_set_update_proc(secs_layer, &draw_seconds);
+	layer_set_update_proc(icon_bg, &draw_icon_bg);
 	
 	window_stack_push(main_win, true);
 }
@@ -328,21 +333,22 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 static void init() {
 	res_bluetooth_on = gbitmap_create_with_resource(RESOURCE_ID_IMG_BLUE_ON);
 	res_bluetooth_off = gbitmap_create_with_resource(RESOURCE_ID_IMG_BLUE_OFF);
+	
 	date_font = fonts_get_system_font(FONT_KEY_GOTHIC_28); //FONT_KEY_BITHAM_30_BLACK);
 	hour_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 	
 	res_ap_logo = gbitmap_create_with_resource(RESOURCE_ID_IMG_AP_LOGO);
 	
-	res_batt_10 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_1);
-	res_batt_20 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_2);
-	res_batt_30 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_3);
-	res_batt_40 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_4);
-	res_batt_50 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_5);
-	res_batt_60 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_6);
-	res_batt_70 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_7);
-	res_batt_80 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_8);
-	res_batt_90 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_9);
-	res_batt_100 = gbitmap_create_with_resource(RESOURCE_ID_IMG_POWER_ON);
+	res_batt_10  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_1);
+	res_batt_20  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_2);
+	res_batt_30  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_3);
+	res_batt_40  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_4);
+	res_batt_50  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_5);
+	res_batt_60  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_6);
+	res_batt_70  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_7);
+	res_batt_80  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_8);
+	res_batt_90  = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_9);
+	res_batt_100 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_10);
 
 	res_digit_0 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_0);
 	res_digit_1 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_1);
