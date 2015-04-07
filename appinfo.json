@@ -9,13 +9,128 @@
     "resources": {
         "media": [
             {
-                "file": "images/logo_aperture.png",
-                "name": "IMG_AP_LOGO",
+                "file": "images/ico_pm.png",
+                "name": "TS_ICO_PM",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_am.png",
+                "name": "TS_ICO_AM",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_12.png",
+                "name": "TS_ICO_12",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_11.png",
+                "name": "TS_ICO_11",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_10.png",
+                "name": "TS_ICO_10",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_9.png",
+                "name": "TS_ICO_9",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_8.png",
+                "name": "TS_ICO_8",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_7.png",
+                "name": "TS_ICO_7",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_6.png",
+                "name": "TS_ICO_6",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_5.png",
+                "name": "TS_ICO_5",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_4.png",
+                "name": "TS_ICO_4",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_3.png",
+                "name": "TS_ICO_3",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_2.png",
+                "name": "TS_ICO_2",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_1.png",
+                "name": "TS_ICO_1",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_10.png",
+                "name": "IMG_BAT_10",
                 "type": "png"
             },
             {
                 "file": "images/aper_9.png",
-                "name": "IMG_APER_9",
+                "name": "IMG_BAT_9",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_8.png",
+                "name": "IMG_BAT_8",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_7.png",
+                "name": "IMG_BAT_7",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_6.png",
+                "name": "IMG_BAT_6",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_5.png",
+                "name": "IMG_BAT_5",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_4.png",
+                "name": "IMG_BAT_4",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_3.png",
+                "name": "IMG_BAT_3",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_2.png",
+                "name": "IMG_BAT_2",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_1.png",
+                "name": "IMG_BAT_1",
+                "type": "png"
+            },
+            {
+                "file": "images/logo_aperture.png",
+                "name": "IMG_AP_LOGO",
                 "type": "png"
             },
             {
@@ -55,31 +170,6 @@
                 "type": "png"
             },
             {
-                "file": "images/aper_8.png",
-                "name": "IMG_APER_8",
-                "type": "png"
-            },
-            {
-                "file": "images/aper_7.png",
-                "name": "IMG_APER_7",
-                "type": "png"
-            },
-            {
-                "file": "images/aper_6.png",
-                "name": "IMG_APER_6",
-                "type": "png"
-            },
-            {
-                "file": "images/aper_5.png",
-                "name": "IMG_APER_5",
-                "type": "png"
-            },
-            {
-                "file": "images/aper_4.png",
-                "name": "IMG_APER_4",
-                "type": "png"
-            },
-            {
                 "file": "images/num_3.png",
                 "name": "IMG_NUM_3",
                 "type": "png"
@@ -100,11 +190,6 @@
                 "type": "png"
             },
             {
-                "file": "images/power_on.png",
-                "name": "IMG_POWER_ON",
-                "type": "png"
-            },
-            {
                 "file": "images/blue_off.png",
                 "name": "IMG_BLUE_OFF",
                 "type": "png"
@@ -112,21 +197,6 @@
             {
                 "file": "images/blue_on.png",
                 "name": "IMG_BLUE_ON",
-                "type": "png"
-            },
-            {
-                "file": "images/aper_3.png",
-                "name": "IMG_APER_3",
-                "type": "png"
-            },
-            {
-                "file": "images/aper_1.png",
-                "name": "IMG_APER_1",
-                "type": "png"
-            },
-            {
-                "file": "images/aper_2.png",
-                "name": "IMG_APER_2",
                 "type": "png"
             }
         ]
