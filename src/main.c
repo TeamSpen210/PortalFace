@@ -44,7 +44,7 @@ static GBitmap *res_ap_logo;
 static bool charge_vibe_done = 1;
 static bool bluetooth_vibe_done = 1;
 
-unit32_t ICO_IDS[] = {
+int ICO_IDS[] = {
 	RESOURCE_ID_TS_ICO_1,
 	RESOURCE_ID_TS_ICO_2,
 	RESOURCE_ID_TS_ICO_3,
@@ -57,7 +57,7 @@ unit32_t ICO_IDS[] = {
 	RESOURCE_ID_TS_ICO_10,
 	RESOURCE_ID_TS_ICO_11,
 	RESOURCE_ID_TS_ICO_12
-}
+};
 
 static void initialise_ui(void) {
 	main_win = window_create();
