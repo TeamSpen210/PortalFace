@@ -44,7 +44,7 @@ static GBitmap *res_ap_logo;
 static bool charge_vibe_done = 1;
 static bool bluetooth_vibe_done = 1;
 
-byte ICO_IDS[] = {
+unit32_t ICO_IDS[] = {
 	RESOURCE_ID_TS_ICO_1,
 	RESOURCE_ID_TS_ICO_2,
 	RESOURCE_ID_TS_ICO_3,
@@ -112,7 +112,7 @@ static void initialise_ui(void) {
 }
 
 static void handle_window_unload(Window* window) {
-  window_destroy(main_win);
+	window_destroy(main_win);
 	
 	bitmap_layer_destroy(box_blue);
 	bitmap_layer_destroy(box_batt);
@@ -181,7 +181,6 @@ static void draw_icon_bg(struct Layer *layer, GContext *ctx) {
 }
 
 void show_main_window(void) {
-	initialise_ui();
 	window_set_window_handlers(main_win, (WindowHandlers) {
 		.unload = handle_window_unload,
 	});
