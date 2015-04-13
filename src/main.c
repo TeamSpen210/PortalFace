@@ -1,17 +1,22 @@
 #include <pebble.h>
 	
 static Window *main_win;
-static GFont *date_font;
-static GFont *hour_font;
+static GFont *small_font;
 static BitmapLayer *box_blue;
 static BitmapLayer *box_batt;
-static BitmapLayer *ap_logo;
+static BitmapLayer *box_apm;
 static TextLayer *box_date;
 static TextLayer *hour_text;
 
 static Layer *secs_layer;
+static Layer *icon_bg;
 static BitmapLayer *min_dig_ten;
 static BitmapLayer *min_dig_one;
+
+static BitmapLayer *ap_logo;
+
+static GBitmap *res_am;
+static GBitmap *res_pm;
 
 static GBitmap *res_digit_0;
 static GBitmap *res_digit_1;
@@ -43,17 +48,38 @@ static GBitmap *res_ap_logo;
 static bool charge_vibe_done = 1;
 static bool bluetooth_vibe_done = 1;
 
+#define BOX_POS(x,y) GRect(27 + (x)*18, 110 + (y)*18, 16, 16)
+
+int ICO_IDS[] = {
+	RESOURCE_ID_TS_ICO_1,
+	RESOURCE_ID_TS_ICO_2,
+	RESOURCE_ID_TS_ICO_3,
+	RESOURCE_ID_TS_ICO_4,
+	RESOURCE_ID_TS_ICO_5,
+	RESOURCE_ID_TS_ICO_6,
+	RESOURCE_ID_TS_ICO_7,
+	RESOURCE_ID_TS_ICO_8,
+	RESOURCE_ID_TS_ICO_9,
+	RESOURCE_ID_TS_ICO_10,
+	RESOURCE_ID_TS_ICO_11,
+	RESOURCE_ID_TS_ICO_12
+};
+
+GBitmap *ico_bitmap[6];
+
+BitmapLayer *ico_layers[6];
+
 static void initialise_ui(void) {
 	main_win = window_create();
 	window_set_fullscreen(main_win, true);
-
+	
 	// bluetooth bitmap
-	box_blue = bitmap_layer_create(GRect(14, 110, 32, 32));
+	box_blue = bitmap_layer_create(BOX_POS(0,0));
 	bitmap_layer_set_bitmap(box_blue, res_bluetooth_off);
 	layer_add_child(window_get_root_layer(main_win), (Layer *)box_blue);
 
 	// battery bitmap
-	box_batt = bitmap_layer_create(GRect(96, 110, 32, 32));
+	box_batt = bitmap_layer_create(BOX_POS(4,0));
 	bitmap_layer_set_bitmap(box_batt, res_batt_90);
 	layer_add_child(window_get_root_layer(main_win), (Layer *)box_batt);
 	
@@ -62,28 +88,21 @@ static void initialise_ui(void) {
 	bitmap_layer_set_bitmap(ap_logo, res_ap_logo);
 	layer_add_child(window_get_root_layer(main_win), (Layer *)ap_logo);
 
-	// battery background
-	//box_bg_batt = inverter_layer_create(GRect(93, 108, 36, 36));
-	//layer_add_child(window_get_root_layer(main_win), (Layer *)box_bg_batt);
-
 	// weekday textbox
-	box_date = text_layer_create(GRect(54, 107, 36, 36));
+	box_date = text_layer_create(GRect(27+1*18, 110 - 1, 16, 16));
 	text_layer_set_background_color(box_date, GColorWhite);
 	text_layer_set_text_color(box_date, GColorBlack);
 	text_layer_set_text_alignment(box_date, GTextAlignmentCenter);
-	text_layer_set_font(box_date, date_font);
+	text_layer_set_font(box_date, small_font);
 	layer_add_child(window_get_root_layer(main_win), (Layer *)box_date);
+	
+	// am/pm bitmap
+	box_apm = bitmap_layer_create(BOX_POS(3,0));
+	bitmap_layer_set_bitmap(box_apm, res_am);
+	layer_add_child(window_get_root_layer(main_win), (Layer *)box_apm);
 
-	// bluetooth background
-	//box_bg_blue = inverter_layer_create(GRect(13, 108, 36, 36));
-	//layer_add_child(window_get_root_layer(main_win), (Layer *)box_bg_blue);
-
-	// icon border
-	//box_border = inverter_layer_create(GRect(10, 113-5, 120, 40));
-	//layer_add_child(window_get_root_layer(main_win), (Layer *)box_border);
-  
 	// seconds layer
-	secs_layer = layer_create(GRect(10, 85, 123, 150+32+1));
+	secs_layer = layer_create(GRect(10, 85, 123, 20));
 	layer_add_child(window_get_root_layer(main_win), (Layer *)secs_layer);
 		
 	// minute tens digit
@@ -100,11 +119,26 @@ static void initialise_ui(void) {
 	text_layer_set_text_color(hour_text, GColorBlack);
 	text_layer_set_text(hour_text, "??");
 	text_layer_set_text_alignment(hour_text, GTextAlignmentRight);
-	text_layer_set_font(hour_text, hour_font);
+	text_layer_set_font(hour_text, small_font);
 	layer_add_child(window_get_root_layer(main_win), (Layer *)hour_text);
+	
+	//Icon background
+	icon_bg = layer_create(GRect(10, 105, 123, 40));
+	layer_add_child(window_get_root_layer(main_win), (Layer *)icon_bg);
+	
+	// Init all the bitmap icons
+	for (int i=0; i<6; i++) {
+		if (i==0) {
+			ico_layers[i] = bitmap_layer_create(BOX_POS(2, 0));
+		} else {
+			ico_layers[i] = bitmap_layer_create(BOX_POS(i-1, 1));
+		}
+		bitmap_layer_set_bitmap(ico_layers[i], ico_bitmap[i]);
+		layer_add_child(window_get_root_layer(main_win), (Layer *)ico_layers[i]);
+	}
 }
 
-static void destroy_ui(void) {
+static void handle_window_unload(Window* window) {
 	window_destroy(main_win);
 	
 	bitmap_layer_destroy(box_blue);
@@ -124,6 +158,9 @@ static void destroy_ui(void) {
 	gbitmap_destroy(res_bluetooth_off);
 	
 	gbitmap_destroy(res_ap_logo);
+	
+	gbitmap_destroy(res_am);
+	gbitmap_destroy(res_pm);
 
 	gbitmap_destroy(res_digit_0);
 	gbitmap_destroy(res_digit_1);
@@ -146,33 +183,34 @@ static void destroy_ui(void) {
 	gbitmap_destroy(res_batt_80);
 	gbitmap_destroy(res_batt_90);
 	gbitmap_destroy(res_batt_100);
+	
+	for (int i=0; i<6; i++) {
+		bitmap_layer_destroy(ico_layers[i]);
+		gbitmap_destroy(ico_bitmap[i]);
+	}
 }
 
-static void handle_window_unload(Window* window) {
-  destroy_ui();
-}
-
-static void draw_seconds(struct Layer *layer, GContext *ctx){
+static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	// Draw the seconds bar-graph.
-	graphics_context_set_stroke_color(ctx, GColorBlack);
+	//graphics_context_set_stroke_color(ctx, GColorBlack);
 	graphics_draw_line(ctx, GPoint(0,0), GPoint(122, 0));
-	
-	graphics_draw_line(ctx, GPoint(0, 20), GPoint(122, 20));
-	
-	// Bluetooth
-	graphics_draw_rect(ctx, GRect(14-12, 110-87, 36, 36));
-	
-	//  Weekday
-	graphics_draw_rect(ctx, GRect(53-10, 110-87, 36, 36));
-	
-	// Battery
-	graphics_draw_rect(ctx, GRect(96-12, 110-87, 36, 36));
 	
 	time_t temp = time(NULL); 
 	struct tm *cur_time = localtime(&temp);
 	
-	for (int i = 2; i <= (cur_time->tm_sec * 2); i+=2) {
+	for (int i = 2; i <= (cur_time->tm_sec * 2); i += 2) {
 		graphics_draw_line(ctx, GPoint(i, 4), GPoint(i, 12));
+	}
+}
+
+static void draw_icon_bg(struct Layer *layer, GContext *ctx) {
+	// Draw all the borders around the icons.
+	graphics_context_set_stroke_color(ctx, GColorBlack);
+	graphics_draw_line(ctx, GPoint(0, 0), GPoint(122, 0));
+	for (int x = 0; x <= 4; x += 1) {
+		for (int y = 0; y <= 1; y += 1) {
+			graphics_draw_rect(ctx, GRect(x*18 + 16, y*18+4, 18, 18));
+		}
 	}
 }
 
@@ -182,6 +220,7 @@ void show_main_window(void) {
 		.unload = handle_window_unload,
 	});
 	layer_set_update_proc(secs_layer, &draw_seconds);
+	layer_set_update_proc(icon_bg, &draw_icon_bg);
 	
 	window_stack_push(main_win, true);
 }
@@ -239,29 +278,21 @@ static void display_num(char num, BitmapLayer *bitmap) {
 	}
 }
 
-static void update_time() {
-	// Get a tm structure
-	time_t temp = time(NULL); 
-	struct tm *cur_time = localtime(&temp);
-	
-	char min_char[] = "0000";
-	static char hour_char[] = "00/19";
-	static char date_char[] = "22";
-	
-	strftime(min_char, sizeof("--"), "%M", cur_time);
-	strftime(date_char, sizeof("--"), "%d", cur_time);
-	if (clock_is_24h_style()) {
-		strftime(hour_char, sizeof("-----"), "%H/34", cur_time);
-	} else {
-		strftime(hour_char, sizeof("-----"), "%I/19", cur_time);
+static void shuffle_icons(void) {
+	// Rearrange the icon array and apply it to the display.
+	int i, j, tmp;
+	for (i=11; i>0; i--){
+		j = rand() % i+1;
+		tmp = ICO_IDS[i];
+		ICO_IDS[i] = ICO_IDS[j];
+		ICO_IDS[j] = tmp;
 	}
-	display_num(min_char[0], min_dig_ten);
-	display_num(min_char[1], min_dig_one);
 	
-	text_layer_set_text(box_date, date_char);
-	text_layer_set_text(hour_text, hour_char);
-	
-	bluetooth_check();
+	for (i=0; i<6; i++) {
+		gbitmap_destroy(ico_bitmap[i]);
+		ico_bitmap[i] =  gbitmap_create_with_resource(ICO_IDS[i]);
+		bitmap_layer_set_bitmap(ico_layers[i], ico_bitmap[i]);
+	}
 }
 
 static void draw_batt(int perc) {
@@ -289,7 +320,6 @@ static void draw_batt(int perc) {
 }
 
 static void battery_update(BatteryChargeState state) {
-	//layer_set_hidden((Layer *)batt_charge, !(state.is_plugged || state.is_charging));
 	// If charging, flash to the next percent icon if needed
 	if (state.is_plugged || state.is_charging) {
 		time_t temp = time(NULL);
@@ -317,32 +347,69 @@ static void battery_update(BatteryChargeState state) {
 }
 
 static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
-	layer_mark_dirty(secs_layer);
-	update_time();
-	BatteryChargeState st = battery_state_service_peek();
-	if (st.is_plugged || st.is_charging) {
-		battery_update(st);
+	if ((units_changed & SECOND_UNIT) != 0) {
+		layer_mark_dirty(secs_layer);
+		BatteryChargeState st = battery_state_service_peek();
+		if (st.is_plugged || st.is_charging) {
+			battery_update(st);
+		}
+		bluetooth_check();
+	}
+	
+	if ((units_changed & MINUTE_UNIT) != 0) {
+		char min_char[] = "0000";
+		strftime(min_char, sizeof("--"), "%M", tick_time);
+		display_num(min_char[0], min_dig_ten);
+		display_num(min_char[1], min_dig_one);
+	}
+	
+	if ((units_changed & DAY_UNIT) != 0) {
+		static char date_char[] = "22";
+		strftime(date_char, sizeof("--"), "%d", tick_time);
+		text_layer_set_text(box_date, date_char);
+	}
+	
+	if ((units_changed & HOUR_UNIT) !=0) {
+		shuffle_icons();
+		
+		static char hour_char[] = "00/19";
+		if (clock_is_24h_style()) {
+			strftime(hour_char, sizeof("-----"), "%H/34", tick_time);
+		} else {
+			strftime(hour_char, sizeof("-----"), "%I/19", tick_time);
+		}
+		text_layer_set_text(hour_text, hour_char);
+		
+		if ((tick_time -> tm_hour) <= 12) {
+			bitmap_layer_set_bitmap(box_apm, res_am);
+		} else {
+			bitmap_layer_set_bitmap(box_apm, res_pm);
+		}
+		
 	}
 }
 
 static void init() {
 	res_bluetooth_on = gbitmap_create_with_resource(RESOURCE_ID_IMG_BLUE_ON);
 	res_bluetooth_off = gbitmap_create_with_resource(RESOURCE_ID_IMG_BLUE_OFF);
-	date_font = fonts_get_system_font(FONT_KEY_GOTHIC_28); //FONT_KEY_BITHAM_30_BLACK);
-	hour_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+	
+	small_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 	
 	res_ap_logo = gbitmap_create_with_resource(RESOURCE_ID_IMG_AP_LOGO);
 	
-	res_batt_10 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_1);
-	res_batt_20 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_2);
-	res_batt_30 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_3);
-	res_batt_40 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_4);
-	res_batt_50 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_5);
-	res_batt_60 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_6);
-	res_batt_70 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_7);
-	res_batt_80 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_8);
-	res_batt_90 = gbitmap_create_with_resource(RESOURCE_ID_IMG_APER_9);
-	res_batt_100 = gbitmap_create_with_resource(RESOURCE_ID_IMG_POWER_ON);
+	res_am = gbitmap_create_with_resource(RESOURCE_ID_TS_ICO_AM);
+	res_pm = gbitmap_create_with_resource(RESOURCE_ID_TS_ICO_PM);
+	
+	res_batt_10  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_1);
+	res_batt_20  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_2);
+	res_batt_30  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_3);
+	res_batt_40  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_4);
+	res_batt_50  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_5);
+	res_batt_60  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_6);
+	res_batt_70  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_7);
+	res_batt_80  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_8);
+	res_batt_90  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_9);
+	res_batt_100 = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_10);
 
 	res_digit_0 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_0);
 	res_digit_1 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_1);
@@ -355,17 +422,29 @@ static void init() {
 	res_digit_8 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_8);
 	res_digit_9 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_9);
 	
+	for (int i=0; i<6; i++) {
+		ico_bitmap[i] = gbitmap_create_with_resource(ICO_IDS[i]);
+	}
 }
 
 int main() {
+	
+	srand(time(NULL));
+	
 	init();
 	show_main_window();
-
-	update_time();
+	
+	// Get a tm structure
+	time_t temp = time(NULL); 
+	struct tm *cur_time = localtime(&temp);
+	
+	// Run these the first time
+	shuffle_icons();
+	time_handler(cur_time, SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT | DAY_UNIT);
 	bluetooth_check();
 	battery_update(battery_state_service_peek());
 	
-	tick_timer_service_subscribe(SECOND_UNIT, time_handler);
+	tick_timer_service_subscribe(SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT, time_handler);
 	battery_state_service_subscribe(battery_update);
 	
 	app_event_loop();
