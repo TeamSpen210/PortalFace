@@ -379,7 +379,7 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 		battery_update(st);
 	}
 	
-	if ((units_changed & MINUTE_UNIT) !=0) {
+	if ((units_changed & HOUR_UNIT) !=0) {
 		shuffle_icons();
 	}
 }
