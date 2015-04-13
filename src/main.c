@@ -380,7 +380,7 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 		}
 		text_layer_set_text(hour_text, hour_char);
 		
-		if ((tick_time -> tm_hour) <= 12) {
+		if ((tick_time -> tm_hour) < 12) {
 			bitmap_layer_set_bitmap(box_apm, res_am);
 		} else {
 			bitmap_layer_set_bitmap(box_apm, res_pm);
