@@ -295,31 +295,6 @@ static void shuffle_icons(void) {
 	}
 }
 
-static void update_time() {
-	// Get a tm structure
-	time_t temp = time(NULL); 
-	struct tm *cur_time = localtime(&temp);
-	
-	char min_char[] = "0000";
-	static char hour_char[] = "00/19";
-	static char date_char[] = "22";
-	
-	strftime(min_char, sizeof("--"), "%M", cur_time);
-	strftime(date_char, sizeof("--"), "%d", cur_time);
-	if (clock_is_24h_style()) {
-		strftime(hour_char, sizeof("-----"), "%H/34", cur_time);
-	} else {
-		strftime(hour_char, sizeof("-----"), "%I/19", cur_time);
-	}
-	display_num(min_char[0], min_dig_ten);
-	display_num(min_char[1], min_dig_one);
-	
-	text_layer_set_text(box_date, date_char);
-	text_layer_set_text(hour_text, hour_char);
-	
-	bluetooth_check();
-}
-
 static void draw_batt(int perc) {
     if (perc <= 10) {
         bitmap_layer_set_bitmap(box_batt, res_batt_10);
@@ -372,15 +347,45 @@ static void battery_update(BatteryChargeState state) {
 }
 
 static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
-	layer_mark_dirty(secs_layer);
-	update_time();
-	BatteryChargeState st = battery_state_service_peek();
-	if (st.is_plugged || st.is_charging) {
-		battery_update(st);
+	if ((units_changed & SECOND_UNIT) != 0) {
+		layer_mark_dirty(secs_layer);
+		BatteryChargeState st = battery_state_service_peek();
+		if (st.is_plugged || st.is_charging) {
+			battery_update(st);
+		}
+		bluetooth_check();
+	}
+	
+	if ((units_changed & MINUTE_UNIT) != 0) {
+		char min_char[] = "0000";
+		strftime(min_char, sizeof("--"), "%M", tick_time);
+		display_num(min_char[0], min_dig_ten);
+		display_num(min_char[1], min_dig_one);
+	}
+	
+	if ((units_changed & DAY_UNIT) != 0) {
+		static char date_char[] = "22";
+		strftime(date_char, sizeof("--"), "%d", tick_time);
+		text_layer_set_text(box_date, date_char);
 	}
 	
 	if ((units_changed & HOUR_UNIT) !=0) {
 		shuffle_icons();
+		
+		static char hour_char[] = "00/19";
+		if (clock_is_24h_style()) {
+			strftime(hour_char, sizeof("-----"), "%H/34", tick_time);
+		} else {
+			strftime(hour_char, sizeof("-----"), "%I/19", tick_time);
+		}
+		text_layer_set_text(hour_text, hour_char);
+		
+		if ((tick_time -> tm_hour) <= 12) {
+			bitmap_layer_set_bitmap(box_apm, res_am);
+		} else {
+			bitmap_layer_set_bitmap(box_apm, res_pm);
+		}
+		
 	}
 }
 
@@ -429,9 +434,13 @@ int main() {
 	init();
 	show_main_window();
 	
+	// Get a tm structure
+	time_t temp = time(NULL); 
+	struct tm *cur_time = localtime(&temp);
+	
 	// Run these the first time
 	shuffle_icons();
-	update_time();
+	time_handler(cur_time, SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT | DAY_UNIT);
 	bluetooth_check();
 	battery_update(battery_state_service_peek());
 	
