@@ -282,7 +282,7 @@ static void shuffle_icons(void) {
 	// Rearrange the icon array and apply it to the display.
 	int i, j, tmp;
 	for (i=11; i>0; i--){
-		j = rand() % i+1;
+		j = rand() % (i+1);
 		tmp = ICO_IDS[i];
 		ICO_IDS[i] = ICO_IDS[j];
 		ICO_IDS[j] = tmp;
