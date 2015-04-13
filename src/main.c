@@ -48,7 +48,7 @@ static GBitmap *res_ap_logo;
 static bool charge_vibe_done = 1;
 static bool bluetooth_vibe_done = 1;
 
-#define BOX_POS(x,y) GRect(27 + x*18, 110 + y*18, 16, 16)
+#define BOX_POS(x,y) GRect(27 + (x)*18, 110 + (y)*18, 16, 16)
 
 int ICO_IDS[] = {
 	RESOURCE_ID_TS_ICO_1,
@@ -64,6 +64,10 @@ int ICO_IDS[] = {
 	RESOURCE_ID_TS_ICO_11,
 	RESOURCE_ID_TS_ICO_12
 };
+
+GBitmap *ico_bitmap[6];
+
+BitmapLayer *ico_layers[6];
 
 static void initialise_ui(void) {
 	main_win = window_create();
@@ -119,9 +123,19 @@ static void initialise_ui(void) {
 	layer_add_child(window_get_root_layer(main_win), (Layer *)hour_text);
 	
 	//Icon background
-	icon_bg = layer_create(GRect(10, 105, 123, 38));
+	icon_bg = layer_create(GRect(10, 105, 123, 40));
 	layer_add_child(window_get_root_layer(main_win), (Layer *)icon_bg);
-
+	
+	// Init all the bitmap icons
+	for (int i=0; i<6; i++) {
+		if (i==0) {
+			ico_layers[i] = bitmap_layer_create(BOX_POS(2, 0));
+		} else {
+			ico_layers[i] = bitmap_layer_create(BOX_POS(i-1, 1));
+		}
+		bitmap_layer_set_bitmap(ico_layers[i], ico_bitmap[i]);
+		layer_add_child(window_get_root_layer(main_win), (Layer *)ico_layers[i]);
+	}
 }
 
 static void handle_window_unload(Window* window) {
@@ -169,6 +183,11 @@ static void handle_window_unload(Window* window) {
 	gbitmap_destroy(res_batt_80);
 	gbitmap_destroy(res_batt_90);
 	gbitmap_destroy(res_batt_100);
+	
+	for (int i=0; i<6; i++) {
+		bitmap_layer_destroy(ico_layers[i]);
+		gbitmap_destroy(ico_bitmap[i]);
+	}
 }
 
 static void draw_seconds(struct Layer *layer, GContext *ctx) {
@@ -259,6 +278,10 @@ static void display_num(char num, BitmapLayer *bitmap) {
 	}
 }
 
+static void shuffle_icons(void) {
+
+}
+
 static void update_time() {
 	// Get a tm structure
 	time_t temp = time(NULL); 
@@ -342,6 +365,10 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 	if (st.is_plugged || st.is_charging) {
 		battery_update(st);
 	}
+	
+	if (units_changed & HOUR_UNIT !=0) {
+		shuffle_icons();
+	}
 }
 
 static void init() {
@@ -377,16 +404,20 @@ static void init() {
 	res_digit_8 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_8);
 	res_digit_9 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_9);
 	
+	for (int i=0; i<6; i++) {
+		ico_bitmap[i] = gbitmap_create_with_resource(ICO_IDS[i]);
+	}
 }
 
 int main() {
 	init();
 	show_main_window();
+	shuffle_icons();
 	update_time();
 	bluetooth_check();
 	battery_update(battery_state_service_peek());
 	
-	tick_timer_service_subscribe(SECOND_UNIT, time_handler);
+	tick_timer_service_subscribe(SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT, time_handler);
 	battery_state_service_subscribe(battery_update);
 	layer_mark_dirty(icon_bg);
 	app_event_loop();
