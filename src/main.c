@@ -279,7 +279,20 @@ static void display_num(char num, BitmapLayer *bitmap) {
 }
 
 static void shuffle_icons(void) {
-
+	// Rearrange the icon array and apply it to the display.
+	int i, j, tmp;
+	for (i=11; i>0; i--){
+		j = rand() % i+1;
+		tmp = ICO_IDS[i];
+		ICO_IDS[i] = ICO_IDS[j];
+		ICO_IDS[j] = tmp;
+	}
+	
+	for (i=0; i<6; i++) {
+		gbitmap_destroy(ico_bitmap[i]);
+		ico_bitmap[i] =  gbitmap_create_with_resource(ICO_IDS[i]);
+		bitmap_layer_set_bitmap(ico_layers[i], ico_bitmap[i]);
+	}
 }
 
 static void update_time() {
@@ -366,7 +379,7 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 		battery_update(st);
 	}
 	
-	if (units_changed & HOUR_UNIT !=0) {
+	if ((units_changed & MINUTE_UNIT) !=0) {
 		shuffle_icons();
 	}
 }
@@ -410,8 +423,13 @@ static void init() {
 }
 
 int main() {
+	
+	srand(time(NULL));
+	
 	init();
 	show_main_window();
+	
+	// Run these the first time
 	shuffle_icons();
 	update_time();
 	bluetooth_check();
@@ -419,7 +437,7 @@ int main() {
 	
 	tick_timer_service_subscribe(SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT, time_handler);
 	battery_state_service_subscribe(battery_update);
-	layer_mark_dirty(icon_bg);
+	
 	app_event_loop();
 	
 	tick_timer_service_unsubscribe();
