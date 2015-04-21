@@ -10,7 +10,9 @@ static TextLayer *hour_text;
 
 static Layer *secs_layer;
 static Layer *secs_line;
+
 static Layer *icon_bg;
+static Layer *icon_line;
 static BitmapLayer *min_dig_ten;
 static BitmapLayer *min_dig_one;
 
@@ -127,10 +129,14 @@ static void initialise_ui(void) {
 	text_layer_set_text(hour_text, "??");
 	text_layer_set_text_alignment(hour_text, GTextAlignmentRight);
 	text_layer_set_font(hour_text, small_font);
-	layer_add_child(root_layer, (Layer *)hour_text);
+	layer_add_child(root_layer, (Layer *)hour_text);	
+	
+	// Icon line
+	icon_line = layer_create(GRect(10, 105, 123, 1));
+	layer_add_child(root_layer, (Layer *)icon_line);
 	
 	//Icon background
-	icon_bg = layer_create(GRect(10, 105, 123, 40));
+	icon_bg = layer_create(GRect(10, 109, 123, 40));
 	layer_add_child(root_layer, (Layer *)icon_bg);
 	
 	// Init all the bitmap icons
@@ -231,19 +237,23 @@ void powerdown() {
 }
 
 void powerup_lines(void *val) {
-	SHOW(icon_bg);
+	SHOW(icon_line);
 	SHOW(secs_line);
 }	
 void powerup_logo(void *val) {
 	SHOW(ap_logo);
+	
+	// Hide everything from powerup_nums to allow switching between them
 	HIDE(min_dig_ten);
 	HIDE(min_dig_one);
 	HIDE(hour_text);
+	HIDE(icon_bg);
 }		
 void powerup_nums(void *val) {
 	SHOW(min_dig_ten);
 	SHOW(min_dig_one);
 	SHOW(hour_text);
+	SHOW(icon_bg);
 }		
 void powerup_boxes(void *val) {
 	SHOW(box_blue);
@@ -295,10 +305,9 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 static void draw_icon_bg(struct Layer *layer, GContext *ctx) {
 	// Draw all the borders around the icons.
 	graphics_context_set_stroke_color(ctx, GColorBlack);
-	graphics_draw_line(ctx, GPoint(0, 0), GPoint(122, 0));
 	for (int x = 0; x <= 4; x += 1) {
 		for (int y = 0; y <= 1; y += 1) {
-			graphics_draw_rect(ctx, GRect(x*18 + 16, y*18+4, 18, 18));
+			graphics_draw_rect(ctx, GRect(x*18 + 16, y*18, 18, 18));
 		}
 	}
 }
@@ -309,11 +318,12 @@ void show_main_window(void) {
 		.unload = handle_window_unload,
 	});
 	layer_set_update_proc(secs_layer, &draw_seconds);
-	layer_set_update_proc(icon_bg, &draw_icon_bg);
 	layer_set_update_proc(secs_line, &draw_sep_line);
 	
+	layer_set_update_proc(icon_bg, &draw_icon_bg);
+	layer_set_update_proc(icon_line, &draw_sep_line);
+	
 	window_stack_push(main_win, true);
-	//powerup();
 }
 
 void hide_main_window(void) {
