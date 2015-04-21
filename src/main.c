@@ -384,6 +384,7 @@ static void shuffle_icons(void) {
 		ico_bitmap[i] =  gbitmap_create_with_resource(ICO_IDS[i]);
 		bitmap_layer_set_bitmap(ico_layers[i], ico_bitmap[i]);
 	}
+	powerup(); // "Restart" the screen
 }
 
 static void draw_batt(int perc) {
@@ -430,7 +431,6 @@ static void battery_update(BatteryChargeState state) {
 		if (!charge_vibe_done) {
 			vibes_double_pulse();
 			charge_vibe_done = 1;
-			powerup();
 		}
 	} else
 		{
@@ -531,13 +531,14 @@ int main() {
 	struct tm *cur_time = localtime(&temp);
 	
 	// Run these the first time
-	shuffle_icons();
 	time_handler(cur_time, SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT | DAY_UNIT);
 	bluetooth_check();
 	battery_update(battery_state_service_peek());
 	
 	tick_timer_service_subscribe(SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT, time_handler);
 	battery_state_service_subscribe(battery_update);
+	
+	shuffle_icons(); // also starts the powerup animation
 	
 	app_event_loop();
 	
