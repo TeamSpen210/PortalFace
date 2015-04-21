@@ -9,6 +9,7 @@ static TextLayer *box_date;
 static TextLayer *hour_text;
 
 static Layer *secs_layer;
+static Layer *secs_line;
 static Layer *icon_bg;
 static BitmapLayer *min_dig_ten;
 static BitmapLayer *min_dig_one;
@@ -73,20 +74,22 @@ static void initialise_ui(void) {
 	main_win = window_create();
 	window_set_fullscreen(main_win, true);
 	
+	struct Layer *root_layer = window_get_root_layer(main_win);
+	
 	// bluetooth bitmap
 	box_blue = bitmap_layer_create(BOX_POS(0,0));
 	bitmap_layer_set_bitmap(box_blue, res_bluetooth_off);
-	layer_add_child(window_get_root_layer(main_win), (Layer *)box_blue);
+	layer_add_child(root_layer, (Layer *)box_blue);
 
 	// battery bitmap
 	box_batt = bitmap_layer_create(BOX_POS(4,0));
 	bitmap_layer_set_bitmap(box_batt, res_batt_90);
-	layer_add_child(window_get_root_layer(main_win), (Layer *)box_batt);
+	layer_add_child(root_layer, (Layer *)box_batt);
 	
 	// aperture logo
 	ap_logo = bitmap_layer_create(GRect(10, 150, 65, 16));
 	bitmap_layer_set_bitmap(ap_logo, res_ap_logo);
-	layer_add_child(window_get_root_layer(main_win), (Layer *)ap_logo);
+	layer_add_child(root_layer, (Layer *)ap_logo);
 
 	// weekday textbox
 	box_date = text_layer_create(GRect(27+1*18, 110 - 1, 16, 16));
@@ -94,37 +97,41 @@ static void initialise_ui(void) {
 	text_layer_set_text_color(box_date, GColorBlack);
 	text_layer_set_text_alignment(box_date, GTextAlignmentCenter);
 	text_layer_set_font(box_date, small_font);
-	layer_add_child(window_get_root_layer(main_win), (Layer *)box_date);
+	layer_add_child(root_layer, (Layer *)box_date);
 	
 	// am/pm bitmap
 	box_apm = bitmap_layer_create(BOX_POS(3,0));
 	bitmap_layer_set_bitmap(box_apm, res_am);
-	layer_add_child(window_get_root_layer(main_win), (Layer *)box_apm);
+	layer_add_child(root_layer, (Layer *)box_apm);
+	
+	// seconds line
+	secs_line = layer_create(GRect(10, 85, 123, 1));
+	layer_add_child(root_layer, (Layer *)secs_line);
 
 	// seconds layer
-	secs_layer = layer_create(GRect(10, 85, 123, 20));
-	layer_add_child(window_get_root_layer(main_win), (Layer *)secs_layer);
+	secs_layer = layer_create(GRect(10, 89, 123, 8));
+	layer_add_child(root_layer, (Layer *)secs_layer);
 		
 	// minute tens digit
 	min_dig_ten = bitmap_layer_create(GRect(71 - 32 - 2, 5, 32, 80));
-	layer_add_child(window_get_root_layer(main_win), (Layer *)min_dig_ten);
+	layer_add_child(root_layer, (Layer *)min_dig_ten);
 
 	// minte ones digit
 	min_dig_one = bitmap_layer_create(GRect(71 + 2, 5, 32, 80));
-	layer_add_child(window_get_root_layer(main_win), (Layer *)min_dig_one);
+	layer_add_child(root_layer, (Layer *)min_dig_one);
 	
 	// hour text
-	hour_text =  text_layer_create(GRect(8, 68, 32, 15));
+	hour_text = text_layer_create(GRect(8, 68, 32, 15));
 	text_layer_set_background_color(hour_text, GColorWhite);
 	text_layer_set_text_color(hour_text, GColorBlack);
 	text_layer_set_text(hour_text, "??");
 	text_layer_set_text_alignment(hour_text, GTextAlignmentRight);
 	text_layer_set_font(hour_text, small_font);
-	layer_add_child(window_get_root_layer(main_win), (Layer *)hour_text);
+	layer_add_child(root_layer, (Layer *)hour_text);
 	
 	//Icon background
 	icon_bg = layer_create(GRect(10, 105, 123, 40));
-	layer_add_child(window_get_root_layer(main_win), (Layer *)icon_bg);
+	layer_add_child(root_layer, (Layer *)icon_bg);
 	
 	// Init all the bitmap icons
 	for (int i=0; i<6; i++) {
@@ -134,7 +141,7 @@ static void initialise_ui(void) {
 			ico_layers[i] = bitmap_layer_create(BOX_POS(i-1, 1));
 		}
 		bitmap_layer_set_bitmap(ico_layers[i], ico_bitmap[i]);
-		layer_add_child(window_get_root_layer(main_win), (Layer *)ico_layers[i]);
+		layer_add_child(root_layer, (Layer *)ico_layers[i]);
 	}
 }
 
@@ -190,16 +197,98 @@ static void handle_window_unload(Window* window) {
 	}
 }
 
+enum {
+	POW_LINES,
+	POW_LOGO, 
+	POW_NUMS,
+	POW_BOXES,
+	POW_PROGRESS
+};
+
+// Macros to simplify these commands.
+#define HIDE(lay) layer_set_hidden((Layer *) lay, true)
+#define SHOW(lay) layer_set_hidden((Layer *) lay, false)
+void powerdown() {
+	// Hide all the icons.
+	HIDE(icon_bg);
+	
+	HIDE(box_blue);
+	HIDE(box_batt);
+	HIDE(box_apm);
+	HIDE(box_date);
+	
+	HIDE(secs_layer);
+	HIDE(secs_line);
+	HIDE(hour_text);
+	
+	HIDE(min_dig_ten);
+	HIDE(min_dig_one);
+
+	HIDE(ap_logo);
+	for (int i=0; i<6; i++) {
+		HIDE(ico_layers[i]);
+	}
+}
+
+void powerup_lines(void *val) {
+	SHOW(icon_bg);
+	SHOW(secs_line);
+}	
+void powerup_logo(void *val) {
+	SHOW(ap_logo);
+	HIDE(min_dig_ten);
+	HIDE(min_dig_one);
+	HIDE(hour_text);
+}		
+void powerup_nums(void *val) {
+	SHOW(min_dig_ten);
+	SHOW(min_dig_one);
+	SHOW(hour_text);
+}		
+void powerup_boxes(void *val) {
+	SHOW(box_blue);
+	SHOW(box_batt);
+	SHOW(box_apm);
+	SHOW(box_date);
+	for (int i=0; i<6; i++) {
+		SHOW(ico_layers[i]);
+	}
+}
+void powerup_progress(void *val) {
+	SHOW(secs_layer);
+	light_enable(false);
+	light_enable_interaction(); // Return light to normal
+}
+	
+static void powerup() {
+	// Plays the powerup animation by calling powerup_callback().
+	powerdown();  // Hide everything first
+	light_enable(true); // Keep the light on throughout the animation
+	app_timer_register( 150, &powerup_lines, NULL);
+	app_timer_register( 300, &powerup_nums, NULL);
+	app_timer_register( 400, &powerup_logo, NULL);
+	app_timer_register( 600, &powerup_nums, NULL);
+	app_timer_register( 800, &powerup_logo, NULL);
+	app_timer_register( 900, &powerup_nums, NULL);
+	app_timer_register(1100, &powerup_boxes, NULL);
+	app_timer_register(1500, &powerup_boxes, NULL);
+	app_timer_register(1800, &powerup_progress, NULL);
+}
+
+static void draw_sep_line(struct Layer *layer, GContext *ctx) {
+	// Draw the line that sepaarates seconds from the boxes or the testchamber number.
+	graphics_draw_line(ctx, GPoint(0,0), GPoint(122, 0));
+}
+
 static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	// Draw the seconds bar-graph.
 	//graphics_context_set_stroke_color(ctx, GColorBlack);
-	graphics_draw_line(ctx, GPoint(0,0), GPoint(122, 0));
 	
 	time_t temp = time(NULL); 
 	struct tm *cur_time = localtime(&temp);
 	
 	for (int i = 2; i <= (cur_time->tm_sec * 2); i += 2) {
-		graphics_draw_line(ctx, GPoint(i, 4), GPoint(i, 12));
+		graphics_draw_line(ctx, GPoint(i, 0), GPoint(i, 8));
 	}
 }
 
@@ -221,8 +310,10 @@ void show_main_window(void) {
 	});
 	layer_set_update_proc(secs_layer, &draw_seconds);
 	layer_set_update_proc(icon_bg, &draw_icon_bg);
+	layer_set_update_proc(secs_line, &draw_sep_line);
 	
 	window_stack_push(main_win, true);
+	//powerup();
 }
 
 void hide_main_window(void) {
@@ -339,6 +430,7 @@ static void battery_update(BatteryChargeState state) {
 		if (!charge_vibe_done) {
 			vibes_double_pulse();
 			charge_vibe_done = 1;
+			powerup();
 		}
 	} else
 		{
