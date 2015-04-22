@@ -94,7 +94,7 @@ static void initialise_ui(void) {
 	layer_add_child(root_layer, (Layer *)ap_logo);
 
 	// weekday textbox
-	box_date = text_layer_create(GRect(27+1*18, 110 - 1, 16, 16));
+	box_date = text_layer_create(GRect(27 + 1*18, 110 - 1, 16, 16));
 	text_layer_set_background_color(box_date, GColorWhite);
 	text_layer_set_text_color(box_date, GColorBlack);
 	text_layer_set_text_alignment(box_date, GTextAlignmentCenter);
@@ -217,6 +217,7 @@ enum {
 void powerdown() {
 	// Hide all the icons.
 	HIDE(icon_bg);
+	HIDE(icon_line);
 	
 	HIDE(box_blue);
 	HIDE(box_batt);
@@ -264,14 +265,24 @@ void powerup_boxes(void *val) {
 		SHOW(ico_layers[i]);
 	}
 }
+
+static bool playing_powerup = false;
+
 void powerup_progress(void *val) {
 	SHOW(secs_layer);
-	light_enable(false);
+	
 	light_enable_interaction(); // Return light to normal
+	light_enable(false);
+	playing_powerup = false;
 }
 	
 static void powerup() {
-	// Plays the powerup animation by calling powerup_callback().
+	// Play the light flickering animation.
+	if (playing_powerup){
+		return; // Don't repeat
+	}
+	playing_powerup = true;
+	
 	powerdown();  // Hide everything first
 	light_enable(true); // Keep the light on throughout the animation
 	app_timer_register( 150, &powerup_lines, NULL);
@@ -312,7 +323,7 @@ static void draw_icon_bg(struct Layer *layer, GContext *ctx) {
 	}
 }
 
-void show_main_window(void) {
+void show_main_window() {
 	initialise_ui();
 	window_set_window_handlers(main_win, (WindowHandlers) {
 		.unload = handle_window_unload,
@@ -330,8 +341,8 @@ void hide_main_window(void) {
   window_stack_remove(main_win, true);
 }
 
-void bluetooth_check() {
-	if (bluetooth_connection_service_peek()) {
+void bluetooth_check(bool connected) {
+	if (connected) {
 		bitmap_layer_set_bitmap(box_blue, res_bluetooth_on);
 		bluetooth_vibe_done = 0;
 	} else {
@@ -379,7 +390,7 @@ static void display_num(char num, BitmapLayer *bitmap) {
 	}
 }
 
-static void shuffle_icons(void) {
+static void shuffle_icons() {
 	// Rearrange the icon array and apply it to the display.
 	int i, j, tmp;
 	for (i=11; i>0; i--){
@@ -421,6 +432,11 @@ static void draw_batt(int perc) {
 	}
 }
 
+static void shake_handler(AccelAxisType axis, int32_t dir) {
+	// On shakes, shuffle the icons.
+	shuffle_icons();
+}
+
 static void battery_update(BatteryChargeState state) {
 	// If charging, flash to the next percent icon if needed
 	if (state.is_plugged || state.is_charging) {
@@ -455,7 +471,6 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 		if (st.is_plugged || st.is_charging) {
 			battery_update(st);
 		}
-		bluetooth_check();
 	}
 	
 	if ((units_changed & MINUTE_UNIT) != 0) {
@@ -530,7 +545,6 @@ static void init() {
 }
 
 int main() {
-	
 	srand(time(NULL));
 	
 	init();
@@ -542,11 +556,14 @@ int main() {
 	
 	// Run these the first time
 	time_handler(cur_time, SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT | DAY_UNIT);
-	bluetooth_check();
+	bluetooth_check(bluetooth_connection_service_peek());
 	battery_update(battery_state_service_peek());
 	
-	tick_timer_service_subscribe(SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT, time_handler);
+	tick_timer_service_subscribe(SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT | DAY_UNIT, time_handler);
+	
 	battery_state_service_subscribe(battery_update);
+	bluetooth_connection_service_subscribe(bluetooth_check);
+	accel_tap_service_subscribe(shake_handler);
 	
 	shuffle_icons(); // also starts the powerup animation
 	
@@ -555,6 +572,7 @@ int main() {
 	tick_timer_service_unsubscribe();
 	battery_state_service_unsubscribe();
 	bluetooth_connection_service_unsubscribe();
+	accel_tap_service_unsubscribe();
 	
 	return 0;
 }

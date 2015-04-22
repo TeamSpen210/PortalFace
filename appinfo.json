@@ -205,7 +205,7 @@
     "shortName": "Test Sign",
     "uuid": "2f03bfbc-a731-4e83-84af-3642e6ecd52d",
     "versionCode": 1,
-    "versionLabel": "1.0",
+    "versionLabel": "1.2",
     "watchapp": {
         "watchface": true
     }
