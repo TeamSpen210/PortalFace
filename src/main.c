@@ -65,8 +65,23 @@ int ICO_IDS[] = {
 	RESOURCE_ID_TS_ICO_9,
 	RESOURCE_ID_TS_ICO_10,
 	RESOURCE_ID_TS_ICO_11,
-	RESOURCE_ID_TS_ICO_12
+	RESOURCE_ID_TS_ICO_12,
+	RESOURCE_ID_TS_ICO_13,
+	RESOURCE_ID_TS_ICO_14,
+	RESOURCE_ID_TS_ICO_15,
+	RESOURCE_ID_TS_ICO_16,
+	RESOURCE_ID_TS_ICO_17,
+	RESOURCE_ID_TS_ICO_18,
+	RESOURCE_ID_TS_ICO_19,
+	RESOURCE_ID_TS_ICO_20,
+	RESOURCE_ID_TS_ICO_21,
+	RESOURCE_ID_TS_ICO_22,
+	RESOURCE_ID_TS_ICO_23,
+	RESOURCE_ID_TS_ICO_24,
+	RESOURCE_ID_TS_ICO_25,
+	RESOURCE_ID_TS_ICO_26
 };
+const int NUM_ICONS = 26;
 
 GBitmap *ico_bitmap[6];
 
@@ -393,7 +408,7 @@ static void display_num(char num, BitmapLayer *bitmap) {
 static void shuffle_icons() {
 	// Rearrange the icon array and apply it to the display.
 	int i, j, tmp;
-	for (i=11; i>0; i--){
+	for (i=(NUM_ICONS-1); i>0; i--){
 		j = rand() % (i+1);
 		tmp = ICO_IDS[i];
 		ICO_IDS[i] = ICO_IDS[j];
