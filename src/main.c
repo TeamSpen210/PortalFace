@@ -89,7 +89,10 @@ BitmapLayer *ico_layers[6];
 
 static void initialise_ui(void) {
 	main_win = window_create();
+	
+	#ifdef PBL_SDK_2
 	window_set_fullscreen(main_win, true);
+	#endif
 	
 	struct Layer *root_layer = window_get_root_layer(main_win);
 	
@@ -318,12 +321,19 @@ static void draw_sep_line(struct Layer *layer, GContext *ctx) {
 
 static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	// Draw the seconds bar-graph.
-	//graphics_context_set_stroke_color(ctx, GColorBlack);
 	
 	time_t temp = time(NULL); 
 	struct tm *cur_time = localtime(&temp);
-	
+	graphics_context_set_stroke_color(ctx, GColorBlack);
+#ifdef PBL_COLOR
+	// On color Pebbles, draw 'off' bars in grey
+	for(int i = 2; i <= 60 * 2; i += 2) {
+		if ((cur_time -> tm_sec *2) + 2 == i) {
+			graphics_context_set_stroke_color(ctx, GColorLightGray);
+		}
+#else
 	for (int i = 2; i <= (cur_time->tm_sec * 2); i += 2) {
+#endif
 		graphics_draw_line(ctx, GPoint(i, 0), GPoint(i, 8));
 	}
 }
