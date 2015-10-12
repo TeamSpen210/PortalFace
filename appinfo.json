@@ -273,6 +273,10 @@
     },
     "sdkVersion": "3",
     "shortName": "Test Sign",
+    "targetPlatforms": [
+        "aplite",
+        "basalt"
+    ],
     "uuid": "2f03bfbc-a731-4e83-84af-3642e6ecd52d",
     "versionCode": 1,
     "versionLabel": "2.0",
