@@ -271,11 +271,11 @@
             }
         ]
     },
-    "sdkVersion": "2",
+    "sdkVersion": "3",
     "shortName": "Test Sign",
     "uuid": "2f03bfbc-a731-4e83-84af-3642e6ecd52d",
     "versionCode": 1,
-    "versionLabel": "1.3",
+    "versionLabel": "2.0",
     "watchapp": {
         "watchface": true
     }
