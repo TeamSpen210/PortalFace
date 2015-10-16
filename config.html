@@ -3,9 +3,68 @@
 <head>
 <meta charset="utf-8">
 <title>Portal Test Chamber Sign Configuration</title>
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+
+body {
+	margin: 0;
+	width: 100%;
+	height: 100%;
+}
+
+footer {
+	background-color: black;
+	position: absolute;
+	width: 100%;
+	top: auto;
+	bottom: 0px; left: 0px;
+	padding: 0;
+	padding-top: 3px;
+	height: 45px;
+	
+	text-align: center; /* Center the buttons */
+	
+}
+footer button {
+	background-color: rgb(250, 250, 250);
+	position:absolute;
+	width: 80px;
+	height: 40px;
+	bottom: 5px;
+}
+#save {
+	left: 10px;
+}
+#cancel {
+	right: 10px;
+}
+
+main {
+	display: block;
+	position: absolute;
+	bottom: 50px;
+	width: 98%;
+	top: 0px;
+	margin-left: 2%;
+	margin-right: 2%;
+	overflow: scroll;
+	/* Use 'normal' ios scrolling behaviour */
+	-webkit-overflow-scrolling: touch;
+}
+</style>
 </head>
 
 <body>
-
+<main>
+	<form>
+		
+	</form>
+</main>
+<footer>
+	<button id="save">Save</button>
+	
+	<button id="cancel">Cancel</button>
+</footer>
 </body>
 </html>
