@@ -1,7 +1,6 @@
 #include <pebble.h>
 	
 static Window *main_win;
-static GFont *small_font;
 static BitmapLayer *box_blue;
 static BitmapLayer *box_batt;
 static BitmapLayer *box_apm;
@@ -116,7 +115,7 @@ static void initialise_ui(void) {
 	text_layer_set_background_color(box_date, GColorWhite);
 	text_layer_set_text_color(box_date, GColorBlack);
 	text_layer_set_text_alignment(box_date, GTextAlignmentCenter);
-	text_layer_set_font(box_date, small_font);
+	text_layer_set_font(box_date, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 	layer_add_child(root_layer, (Layer *)box_date);
 	
 	// am/pm bitmap
@@ -146,7 +145,7 @@ static void initialise_ui(void) {
 	text_layer_set_text_color(hour_text, GColorBlack);
 	text_layer_set_text(hour_text, "??");
 	text_layer_set_text_alignment(hour_text, GTextAlignmentRight);
-	text_layer_set_font(hour_text, small_font);
+	text_layer_set_font(hour_text, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 	layer_add_child(root_layer, (Layer *)hour_text);	
 	
 	// Icon line
@@ -221,14 +220,6 @@ static void handle_window_unload(Window* window) {
 	}
 }
 
-enum {
-	POW_LINES,
-	POW_LOGO, 
-	POW_NUMS,
-	POW_BOXES,
-	POW_PROGRESS
-};
-
 // Macros to simplify these commands.
 #define HIDE(lay) layer_set_hidden((Layer *) lay, true)
 #define SHOW(lay) layer_set_hidden((Layer *) lay, false)
@@ -256,10 +247,12 @@ void powerdown() {
 }
 
 void powerup_lines(void *val) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Lines");
 	SHOW(icon_line);
 	SHOW(secs_line);
 }	
 void powerup_logo(void *val) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Logo");
 	SHOW(ap_logo);
 	
 	// Hide everything from powerup_nums to allow switching between them
@@ -269,12 +262,15 @@ void powerup_logo(void *val) {
 	HIDE(icon_bg);
 }		
 void powerup_nums(void *val) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Nums");
 	SHOW(min_dig_ten);
 	SHOW(min_dig_one);
 	SHOW(hour_text);
 	SHOW(icon_bg);
-}		
+}
+
 void powerup_boxes(void *val) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Boxes");
 	SHOW(box_blue);
 	SHOW(box_batt);
 	SHOW(box_apm);
@@ -287,6 +283,7 @@ void powerup_boxes(void *val) {
 static bool playing_powerup = false;
 
 void powerup_progress(void *val) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Complete");
 	SHOW(secs_layer);
 	
 	light_enable_interaction(); // Return light to normal
@@ -310,7 +307,6 @@ static void powerup() {
 	app_timer_register( 800, &powerup_logo, NULL);
 	app_timer_register( 900, &powerup_nums, NULL);
 	app_timer_register(1100, &powerup_boxes, NULL);
-	app_timer_register(1500, &powerup_boxes, NULL);
 	app_timer_register(1800, &powerup_progress, NULL);
 }
 
@@ -325,15 +321,15 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	time_t temp = time(NULL); 
 	struct tm *cur_time = localtime(&temp);
 	graphics_context_set_stroke_color(ctx, GColorBlack);
-#ifdef PBL_COLOR
+	#ifdef PBL_COLOR
 	// On color Pebbles, draw 'off' bars in grey
 	for(int i = 2; i <= 60 * 2; i += 2) {
 		if ((cur_time -> tm_sec *2) + 2 == i) {
 			graphics_context_set_stroke_color(ctx, GColorLightGray);
 		}
-#else
+	#else
 	for (int i = 2; i <= (cur_time->tm_sec * 2); i += 2) {
-#endif
+	#endif
 		graphics_draw_line(ctx, GPoint(i, 0), GPoint(i, 8));
 	}
 }
@@ -535,8 +531,6 @@ static void init() {
 	res_bluetooth_on = gbitmap_create_with_resource(RESOURCE_ID_IMG_BLUE_ON);
 	res_bluetooth_off = gbitmap_create_with_resource(RESOURCE_ID_IMG_BLUE_OFF);
 	
-	small_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-	
 	res_ap_logo = gbitmap_create_with_resource(RESOURCE_ID_IMG_AP_LOGO);
 	
 	res_am = gbitmap_create_with_resource(RESOURCE_ID_TS_ICO_AM);
@@ -571,9 +565,14 @@ static void init() {
 
 int main() {
 	srand(time(NULL));
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Starting up");
 	
 	init();
+	
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "initialised");
 	show_main_window();
+	
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Shown window");
 	
 	// Get a tm structure
 	time_t temp = time(NULL); 
@@ -583,6 +582,7 @@ int main() {
 	time_handler(cur_time, SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT | DAY_UNIT);
 	bluetooth_check(bluetooth_connection_service_peek());
 	battery_update(battery_state_service_peek());
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Done checks");
 	
 	tick_timer_service_subscribe(SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT | DAY_UNIT, time_handler);
 	
@@ -591,6 +591,7 @@ int main() {
 	accel_tap_service_subscribe(shake_handler);
 	
 	shuffle_icons(); // also starts the powerup animation
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Shuffled icons");
 	
 	app_event_loop();
 	
