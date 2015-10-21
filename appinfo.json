@@ -14,23 +14,43 @@
                 "type": "png"
             },
             {
+                "file": "images/ico_19.png",
+                "name": "TS_ICO_19",
+                "type": "png"
+            },
+            {
                 "file": "images/blue_off.png",
                 "name": "IMG_BLUE_OFF",
                 "type": "png"
             },
             {
-                "file": "images/num_0.png",
-                "name": "IMG_NUM_0",
+                "file": "images/ico_2.png",
+                "name": "TS_ICO_2",
                 "type": "png"
             },
             {
-                "file": "images/num_1.png",
-                "name": "IMG_NUM_1",
+                "file": "images/ico_23.png",
+                "name": "TS_ICO_23",
                 "type": "png"
             },
             {
-                "file": "images/num_2.png",
-                "name": "IMG_NUM_2",
+                "file": "images/ico_9.png",
+                "name": "TS_ICO_9",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_17.png",
+                "name": "TS_ICO_17",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_1.png",
+                "name": "TS_ICO_1",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_20.png",
+                "name": "TS_ICO_20",
                 "type": "png"
             },
             {
@@ -39,18 +59,8 @@
                 "type": "png"
             },
             {
-                "file": "images/num_4.png",
-                "name": "IMG_NUM_4",
-                "type": "png"
-            },
-            {
-                "file": "images/num_5.png",
-                "name": "IMG_NUM_5",
-                "type": "png"
-            },
-            {
-                "file": "images/num_6.png",
-                "name": "IMG_NUM_6",
+                "file": "images/ico_21.png",
+                "name": "TS_ICO_21",
                 "type": "png"
             },
             {
@@ -60,68 +70,18 @@
                 "type": "png"
             },
             {
-                "file": "images/num_7.png",
-                "name": "IMG_NUM_7",
-                "type": "png"
-            },
-            {
-                "file": "images/num_8.png",
-                "name": "IMG_NUM_8",
-                "type": "png"
-            },
-            {
-                "file": "images/num_9.png",
-                "name": "IMG_NUM_9",
-                "type": "png"
-            },
-            {
-                "file": "images/logo_aperture.png",
-                "name": "IMG_AP_LOGO",
-                "type": "png"
-            },
-            {
                 "file": "images/aper_1.png",
                 "name": "IMG_BAT_1",
                 "type": "png"
             },
             {
-                "file": "images/aper_2.png",
-                "name": "IMG_BAT_2",
+                "file": "images/ico_18.png",
+                "name": "TS_ICO_18",
                 "type": "png"
             },
             {
-                "file": "images/aper_3.png",
-                "name": "IMG_BAT_3",
-                "type": "png"
-            },
-            {
-                "file": "images/aper_4.png",
-                "name": "IMG_BAT_4",
-                "type": "png"
-            },
-            {
-                "file": "images/aper_5.png",
-                "name": "IMG_BAT_5",
-                "type": "png"
-            },
-            {
-                "file": "images/aper_6.png",
-                "name": "IMG_BAT_6",
-                "type": "png"
-            },
-            {
-                "file": "images/aper_7.png",
-                "name": "IMG_BAT_7",
-                "type": "png"
-            },
-            {
-                "file": "images/aper_8.png",
-                "name": "IMG_BAT_8",
-                "type": "png"
-            },
-            {
-                "file": "images/aper_9.png",
-                "name": "IMG_BAT_9",
+                "file": "images/num_5.png",
+                "name": "IMG_NUM_5",
                 "type": "png"
             },
             {
@@ -130,28 +90,53 @@
                 "type": "png"
             },
             {
-                "file": "images/ico_1.png",
-                "name": "TS_ICO_1",
+                "file": "images/aper_8.png",
+                "name": "IMG_BAT_8",
                 "type": "png"
             },
             {
-                "file": "images/ico_2.png",
-                "name": "TS_ICO_2",
+                "file": "images/aper_7.png",
+                "name": "IMG_BAT_7",
                 "type": "png"
             },
             {
-                "file": "images/ico_3.png",
-                "name": "TS_ICO_3",
+                "file": "images/logo_aperture.png",
+                "name": "IMG_AP_LOGO",
                 "type": "png"
             },
             {
-                "file": "images/ico_4.png",
-                "name": "TS_ICO_4",
+                "file": "images/ico_22.png",
+                "name": "TS_ICO_22",
                 "type": "png"
             },
             {
-                "file": "images/ico_5.png",
-                "name": "TS_ICO_5",
+                "file": "images/aper_5.png",
+                "name": "IMG_BAT_5",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_13.png",
+                "name": "TS_ICO_13",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_24.png",
+                "name": "TS_ICO_24",
+                "type": "png"
+            },
+            {
+                "file": "images/num_6.png",
+                "name": "IMG_NUM_6",
+                "type": "png"
+            },
+            {
+                "file": "images/num_0.png",
+                "name": "IMG_NUM_0",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_14.png",
+                "name": "TS_ICO_14",
                 "type": "png"
             },
             {
@@ -170,83 +155,13 @@
                 "type": "png"
             },
             {
-                "file": "images/ico_9.png",
-                "name": "TS_ICO_9",
+                "file": "images/aper_2.png",
+                "name": "IMG_BAT_2",
                 "type": "png"
             },
             {
-                "file": "images/ico_10.png",
-                "name": "TS_ICO_10",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_11.png",
-                "name": "TS_ICO_11",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_12.png",
-                "name": "TS_ICO_12",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_13.png",
-                "name": "TS_ICO_13",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_14.png",
-                "name": "TS_ICO_14",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_15.png",
-                "name": "TS_ICO_15",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_16.png",
-                "name": "TS_ICO_16",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_17.png",
-                "name": "TS_ICO_17",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_18.png",
-                "name": "TS_ICO_18",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_19.png",
-                "name": "TS_ICO_19",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_20.png",
-                "name": "TS_ICO_20",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_21.png",
-                "name": "TS_ICO_21",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_22.png",
-                "name": "TS_ICO_22",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_23.png",
-                "name": "TS_ICO_23",
-                "type": "png"
-            },
-            {
-                "file": "images/ico_24.png",
-                "name": "TS_ICO_24",
+                "file": "images/aper_4.png",
+                "name": "IMG_BAT_4",
                 "type": "png"
             },
             {
@@ -255,8 +170,58 @@
                 "type": "png"
             },
             {
+                "file": "images/num_4.png",
+                "name": "IMG_NUM_4",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_6.png",
+                "name": "IMG_BAT_6",
+                "type": "png"
+            },
+            {
+                "file": "images/num_7.png",
+                "name": "IMG_NUM_7",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_9.png",
+                "name": "IMG_BAT_9",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_10.png",
+                "name": "TS_ICO_10",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_pm.png",
+                "name": "TS_ICO_PM",
+                "type": "png"
+            },
+            {
                 "file": "images/ico_26.png",
                 "name": "TS_ICO_26",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_11.png",
+                "name": "TS_ICO_11",
+                "type": "png"
+            },
+            {
+                "file": "images/num_1.png",
+                "name": "IMG_NUM_1",
+                "type": "png"
+            },
+            {
+                "file": "images/num_2.png",
+                "name": "IMG_NUM_2",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_5.png",
+                "name": "TS_ICO_5",
                 "type": "png"
             },
             {
@@ -265,17 +230,55 @@
                 "type": "png"
             },
             {
-                "file": "images/ico_pm.png",
-                "name": "TS_ICO_PM",
+                "file": "images/num_8.png",
+                "name": "IMG_NUM_8",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_16.png",
+                "name": "TS_ICO_16",
+                "type": "png"
+            },
+            {
+                "file": "images/num_9.png",
+                "name": "IMG_NUM_9",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_12.png",
+                "name": "TS_ICO_12",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_15.png",
+                "name": "TS_ICO_15",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_3.png",
+                "name": "TS_ICO_3",
+                "type": "png"
+            },
+            {
+                "file": "images/aper_3.png",
+                "name": "IMG_BAT_3",
+                "type": "png"
+            },
+            {
+                "file": "images/ico_4.png",
+                "name": "TS_ICO_4",
                 "type": "png"
             }
         ]
     },
-    "sdkVersion": "2",
+    "sdkVersion": "3",
     "shortName": "Test Sign",
+    "targetPlatforms": [
+        "aplite",
+        "basalt"
+    ],
     "uuid": "2f03bfbc-a731-4e83-84af-3642e6ecd52d",
-    "versionCode": 1,
-    "versionLabel": "1.2",
+    "versionLabel": "2.0",
     "watchapp": {
         "watchface": true
     }
