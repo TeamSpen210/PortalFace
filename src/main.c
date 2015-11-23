@@ -52,6 +52,12 @@ static bool bluetooth_vibe_done = 1;
 
 #define BOX_POS(x,y) GRect(27 + (x)*18, 110 + (y)*18, 16, 16)
 
+const int MIN_PADDING = 4; // Distance beween seconds icons
+const int SECONDS_RADIAL_WIDTH = 10; // Length of seconds lines on round display
+const int SECONDS_OUTER_PADDING = 4; // Distance from edge
+const int SECONDS_RADIAL_COUNT = 120 ; // Number of radial seconds lines per second
+const int SECONDS_PADDING = 2; // Distance between lines and circles
+	
 int ICO_IDS[] = {
 	RESOURCE_ID_TS_ICO_1,
 	RESOURCE_ID_TS_ICO_2,
@@ -95,6 +101,20 @@ static void initialise_ui(void) {
 	
 	struct Layer *root_layer = window_get_root_layer(main_win);
 	
+	GRect bounds = layer_get_bounds(root_layer);
+
+	// seconds bar layer. On rect displays it's constrained, but it covers everything on round.
+	#ifdef PBL_RECT
+		secs_layer = layer_create(GRect(10, 89, 123, 8));
+	#else
+		secs_layer = layer_create(grect_inset(
+			bounds, 
+			// Inset slightly
+			GEdgeInsets(SECONDS_OUTER_PADDING)
+		));
+	#endif
+	layer_add_child(root_layer, (Layer *)secs_layer);
+	
 	// bluetooth bitmap
 	box_blue = bitmap_layer_create(BOX_POS(0,0));
 	bitmap_layer_set_bitmap(box_blue, res_bluetooth_off);
@@ -126,17 +146,29 @@ static void initialise_ui(void) {
 	// seconds line
 	secs_line = layer_create(GRect(10, 85, 123, 1));
 	layer_add_child(root_layer, (Layer *)secs_line);
-
-	// seconds layer
-	secs_layer = layer_create(GRect(10, 89, 123, 8));
-	layer_add_child(root_layer, (Layer *)secs_layer);
+	
+	
+	#if defined(PBL_RECT) // On rectangular displays, offset upwards
+		min_dig_ten = bitmap_layer_create(GRect(71 - 32 - MIN_PADDING/2, 5, 32, 80));
+		min_dig_one = bitmap_layer_create(GRect(71 + MIN_PADDING/2, 5, 32, 80));
+	#elif defined(PBL_ROUND) // Round displays center the icons
+		GRect min_pos = (GRect){.size = GSize(64 + MIN_PADDING, 80)};
+		grect_align(&min_pos, &bounds, GAlignCenter, false);
 		
-	// minute tens digit
-	min_dig_ten = bitmap_layer_create(GRect(71 - 32 - 2, 5, 32, 80));
-	layer_add_child(root_layer, (Layer *)min_dig_ten);
+		// minute tens digit
+		min_dig_ten = bitmap_layer_create(grect_inset(
+			min_pos, 
+			GEdgeInsets(0, MIN_PADDING/2 + 32, 0, -MIN_PADDING/2)
+		));
 
-	// minte ones digit
-	min_dig_one = bitmap_layer_create(GRect(71 + 2, 5, 32, 80));
+		// minte ones digit
+		min_dig_one = bitmap_layer_create(grect_inset(
+			min_pos, 
+			GEdgeInsets(0, -MIN_PADDING/2, 0, MIN_PADDING/2 + 32)
+		));
+	#endif
+	
+	layer_add_child(root_layer, (Layer *)min_dig_ten);
 	layer_add_child(root_layer, (Layer *)min_dig_one);
 	
 	// hour text
@@ -317,10 +349,12 @@ static void draw_sep_line(struct Layer *layer, GContext *ctx) {
 
 static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	// Draw the seconds bar-graph.
-	
+	// Horizontal on rectangular displays, radial on round ones.
 	time_t temp = time(NULL); 
 	struct tm *cur_time = localtime(&temp);
 	graphics_context_set_stroke_color(ctx, GColorBlack);
+	
+#if defined(PBL_RECT) // Bar-graph display
 	#ifdef PBL_COLOR
 	// On color Pebbles, draw 'off' bars in grey
 	for(int i = 2; i <= 60 * 2; i += 2) {
@@ -332,6 +366,24 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	#endif
 		graphics_draw_line(ctx, GPoint(i, 0), GPoint(i, 8));
 	}
+#elif defined(PBL_ROUND) // Radial
+	GRect bounds = layer_get_bounds(layer);
+	GRect inner = grect_inset(bounds, GEdgeInsets(SECONDS_RADIAL_WIDTH));
+		
+	graphics_context_set_antialiased(ctx, True);
+		
+	for (int i = 0; i <= SECONDS_RADIAL_COUNT; i += 1) {
+		if ((cur_time -> tm_sec * 60 / SECONDS_RADIAL_COUNT ) + 1 == i) {
+			graphics_context_set_stroke_color(ctx, GColorLightGray);
+		}
+		int angle = TRIG_MAX_ANGLE * i / SECONDS_RADIAL_COUNT;
+		graphics_draw_line(ctx,
+			gpoint_from_polar(inner, GOvalScaleModeFitCircle, angle),
+			gpoint_from_polar(bounds, GOvalScaleModeFitCircle, angle)
+		);
+	}
+
+#endif
 }
 
 static void draw_icon_bg(struct Layer *layer, GContext *ctx) {
