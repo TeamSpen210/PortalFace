@@ -50,8 +50,6 @@ static GBitmap *res_ap_logo;
 static bool charge_vibe_done = 1;
 static bool bluetooth_vibe_done = 1;
 
-#define BOX_POS(x,y) GRect(27 + (x)*18, 110 + (y)*18, 16, 16)
-
 const int MIN_PADDING = 4; // Distance beween seconds icons
 const int SECONDS_RADIAL_WIDTH = 10; // Length of seconds lines on round display
 const int SECONDS_OUTER_PADDING = 4; // Distance from edge
@@ -92,6 +90,19 @@ GBitmap *ico_bitmap[6];
 
 BitmapLayer *ico_layers[6];
 
+GRect box_pos(int off, bool second_row) {
+	// Return the rect matching a specific box position.
+	return GRect(
+	#ifdef PBL_ROUND
+		(second_row) ? 60-32: 60+64, 
+		40 + (off) * 18,
+	#else
+		27 + (off)*18,
+		110 + ((second_row) ? 18: 0),
+	#endif
+	16, 16);
+}
+
 static void initialise_ui(void) {
 	main_win = window_create();
 	
@@ -116,12 +127,12 @@ static void initialise_ui(void) {
 	layer_add_child(root_layer, (Layer *)secs_layer);
 	
 	// bluetooth bitmap
-	box_blue = bitmap_layer_create(BOX_POS(0,0));
+	box_blue = bitmap_layer_create(box_pos(0, false));
 	bitmap_layer_set_bitmap(box_blue, res_bluetooth_off);
 	layer_add_child(root_layer, (Layer *)box_blue);
 
 	// battery bitmap
-	box_batt = bitmap_layer_create(BOX_POS(4,0));
+	box_batt = bitmap_layer_create(box_pos(4, false));
 	bitmap_layer_set_bitmap(box_batt, res_batt_90);
 	layer_add_child(root_layer, (Layer *)box_batt);
 	
@@ -139,7 +150,7 @@ static void initialise_ui(void) {
 	layer_add_child(root_layer, (Layer *)box_date);
 	
 	// am/pm bitmap
-	box_apm = bitmap_layer_create(BOX_POS(3,0));
+	box_apm = bitmap_layer_create(box_pos(3, false));
 	bitmap_layer_set_bitmap(box_apm, res_am);
 	layer_add_child(root_layer, (Layer *)box_apm);
 	
@@ -189,12 +200,9 @@ static void initialise_ui(void) {
 	layer_add_child(root_layer, (Layer *)icon_bg);
 	
 	// Init all the bitmap icons
-	for (int i=0; i<6; i++) {
-		if (i==0) {
-			ico_layers[i] = bitmap_layer_create(BOX_POS(2, 0));
-		} else {
-			ico_layers[i] = bitmap_layer_create(BOX_POS(i-1, 1));
-		}
+	ico_layers[0] = bitmap_layer_create(box_pos(2, false));
+	for (int i=1; i<6; i++) {
+		ico_layers[i] = bitmap_layer_create(box_pos(i, true));
 		bitmap_layer_set_bitmap(ico_layers[i], ico_bitmap[i]);
 		layer_add_child(root_layer, (Layer *)ico_layers[i]);
 	}
@@ -370,7 +378,7 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	GRect bounds = layer_get_bounds(layer);
 	GRect inner = grect_inset(bounds, GEdgeInsets(SECONDS_RADIAL_WIDTH));
 		
-	graphics_context_set_antialiased(ctx, True);
+	graphics_context_set_antialiased(ctx, true);
 		
 	for (int i = 0; i <= SECONDS_RADIAL_COUNT; i += 1) {
 		if ((cur_time -> tm_sec * 60 / SECONDS_RADIAL_COUNT ) + 1 == i) {
