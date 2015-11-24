@@ -1,11 +1,49 @@
 {
-    "appKeys": {},
+    "appKeys": {
+        "bar_type": 0,
+        "shake_light": 1, 
+        "bluetooth": 2
+    },
     "capabilities": [
-        ""
+        "configurable"
     ],
     "companyName": "TeamSpen210",
     "longName": "Test Chamber Sign",
     "projectType": "native",
+    "preferences": {
+        "description": "",
+        "url": "",
+        "items": [
+            {
+                "name": "bar_type",
+                "title": "Data shown on bar:",
+                "type": "enum",
+			    "choices": {
+			        "SEC": "Seconds",
+			        "HR": "Hours",
+			        "MIN": "Minutes",
+			        "RAND": "Random"
+			    },
+			    "default": 0
+            },
+            {
+                "name": "shake_light",
+                "title": "Light up on shake?",
+                "type": "boolean",
+                "on-text": "Yes",
+                "off-text": "No",
+                "default": true
+            },
+            {
+                "name": "bluetooth",
+                "title": "Vibrate when Bluetooth lost?",
+                "type": "boolean",
+                "on-text": "Yes",
+                "off-text": "No",
+                "default": true
+            }
+        ]
+    },
     "resources": {
         "media": [
             {
