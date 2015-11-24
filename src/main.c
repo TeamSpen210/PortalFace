@@ -121,7 +121,9 @@ static void initialise_ui(void) {
 	
 	struct Layer *root_layer = window_get_root_layer(main_win);
 	
+	#ifdef PBL_ROUND
 	GRect bounds = layer_get_bounds(root_layer);
+	#endif
 
 	// seconds bar layer. On rect displays it's constrained, but it covers everything on round.
 	#ifdef PBL_RECT
@@ -375,7 +377,7 @@ static void powerup() {
 		return; // Don't repeat
 	}
 	playing_powerup = true;
-	
+
 	powerdown();  // Hide everything first
 	light_enable(true); // Keep the light on throughout the animation
 	app_timer_register( 150, &powerup_lines, NULL);
@@ -399,7 +401,7 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	time_t temp = time(NULL); 
 	struct tm *cur_time = localtime(&temp);
 	graphics_context_set_stroke_color(ctx, GColorBlack);
-
+	
 #if defined(PBL_RECT) // Bar-graph display
 	#ifdef PBL_COLOR
 	// On color Pebbles, draw 'off' bars in grey
@@ -428,7 +430,7 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 			gpoint_from_polar(bounds, GOvalScaleModeFitCircle, angle)
 		);
 	}
-	
+
 #endif
 }
 
