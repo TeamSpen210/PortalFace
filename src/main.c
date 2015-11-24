@@ -145,7 +145,7 @@ static void initialise_ui(void) {
 	// battery bitmap
 	box_batt = bitmap_layer_create(box_pos(4, false));
 	bitmap_layer_set_bitmap(box_batt, res_batt_90);
-	layer_add_child(root_layer, (Layer *)box_batt);
+	ADD(box_batt);
 	
 	// aperture logo
 	// On round displays it's just the aperture, and bottom-centered
@@ -370,7 +370,7 @@ void powerup_progress(void *val) {
 	light_enable(false);
 	playing_powerup = false;
 }
-	
+
 static void powerup() {
 	// Play the light flickering animation.
 	if (playing_powerup){
