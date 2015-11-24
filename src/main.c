@@ -224,7 +224,7 @@ static void initialise_ui(void) {
 		GRect hour_pos = (GRect){.size = GSize(32, 15)};
 		grect_align(&hour_pos, &bounds, GAlignTop, false);
 		hour_text = text_layer_create(grect_inset(
-			ap_logo_pos,
+			hour_pos,
 			GEdgeInsets(ROUND_VERT_INSET, 0, -ROUND_VERT_INSET)
 		));
 	#endif
