@@ -214,8 +214,20 @@ static void initialise_ui(void) {
 	icon_line = layer_create(GRect(10, 105, 123, 1));
 	ADD(icon_line);
 	
-	//Icon background
-	icon_bg = layer_create(GRect(10, 109, 123, 40));
+	//Icon background - on round it's split up!
+	#ifdef PBL_ROUND
+		GRect first_rect = box_pos(0, false);
+		GRect last_rect = box_pos(4, true);
+		// The round icon backround needs to be the bounding box for each position, + 1 on each side.
+		icon_bg = layer_create(GRect(
+				first_rect.origin.x - 1, 
+				first_rect.origin.y - 1, 
+			    last_rect.origin.x+last_rect.size.w - first_rect.origin.x + 2,
+			    last_rect.origin.y+last_rect.size.h - first_rect.origin.y + 2
+			));
+	#else
+		icon_bg = layer_create(GRect(10, 109, 123, 40));
+	#endif
 		ADD(icon_bg);
 	
 	// Init all the bitmap icons
@@ -286,6 +298,7 @@ static void handle_window_unload(Window* window) {
 // Macros to simplify these commands.
 #define HIDE(lay) layer_set_hidden((Layer *) lay, true)
 #define SHOW(lay) layer_set_hidden((Layer *) lay, false)
+
 void powerdown() {
 	// Hide all the icons.
 	HIDE(icon_bg);
@@ -415,18 +428,29 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 			gpoint_from_polar(bounds, GOvalScaleModeFitCircle, angle)
 		);
 	}
-
+	
 #endif
 }
 
 static void draw_icon_bg(struct Layer *layer, GContext *ctx) {
 	// Draw all the borders around the icons.
 	graphics_context_set_stroke_color(ctx, GColorBlack);
+	#if defined(PBL_RECT)
 	for (int x = 0; x <= 4; x += 1) {
 		for (int y = 0; y <= 1; y += 1) {
 			graphics_draw_rect(ctx, GRect(x*18 + 16, y*18, 18, 18));
 		}
 	}
+	#elif defined(PBL_ROUND)
+	GRect bounds = layer_get_bounds(layer);
+	int right_offset = bounds.size.w - 18;
+	for (int y = 0; y <= 4; y += 1) {
+		// Left
+		graphics_draw_rect(ctx, GRect(0, 18*y, 18, 18));
+		// Right
+		graphics_draw_rect(ctx, GRect(right_offset, 18*y, 18, 18));
+	}
+	#endif
 }
 
 void show_main_window() {
