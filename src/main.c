@@ -57,11 +57,11 @@ static GBitmap *res_ap_logo;
 static bool charge_vibe_done = 1;
 static bool bluetooth_vibe_done = 1;
 
-const int MIN_PADDING = 4; // Distance beween seconds icons and edge of screen
+const int MIN_PADDING = 4; // Distance beween minute digits
 const int SECONDS_RADIAL_WIDTH = 10; // Length of seconds lines on round display
 const int SECONDS_OUTER_PADDING = 4; // Distance from edge
 const int SECONDS_RADIAL_COUNT = 120 ; // Number of radial seconds lines
-const int SECONDS_PADDING = 2; // Distance between inner line and seconds bar ring
+const int SECONDS_INNER_PADDING = 4; // Distance between inner line and seconds bar ring
 
 // Distance the round logo and hour text are inset from the top and bottom
 const int ROUND_VERT_INSET = 24;
@@ -105,7 +105,7 @@ GRect box_pos(int off, bool second_row) {
 	// If second_row is true, it's the right/bottom row.
 	return GRect(
 	#ifdef PBL_ROUND
-		(second_row) ? 80+24+18 : 80-24-18, 
+		(second_row) ? 80+24+16 : 80-24-16, 
 		(180 - 5*18)/2 + (off) * 18,
 	#else
 		27 + (off)*18,
@@ -166,7 +166,9 @@ static void initialise_ui(void) {
 	ADD(ap_logo);
 
 	// weekday textbox
-	box_date = text_layer_create(GRect(27 + 1*18, 110 - 1, 16, 16));
+	GRect box_date_pos = box_pos(1, false);
+	box_date_pos.origin.y -= 1; // It's not aligned perfectly, we need to adjust slightly.
+	box_date = text_layer_create(box_date_pos);
 	text_layer_set_background_color(box_date, GColorWhite);
 	text_layer_set_text_color(box_date, GColorBlack);
 	text_layer_set_text_alignment(box_date, GTextAlignmentCenter);
@@ -184,8 +186,8 @@ static void initialise_ui(void) {
 	#elif defined(PBL_ROUND)
 		// On round watches, it's positioned inside the seconds ring.
 		// We need to inset the width of the seconds ring, plus our paddings.
-		secs_line = layer_create(grect_inset(bounds, GEdgeInsets(
-			SECONDS_OUTER_PADDING + SECONDS_RADIAL_WIDTH + SECONDS_PADDING
+		secs_line = layer_create(grect_inset(bounds, 
+			GEdgeInsets(SECONDS_OUTER_PADDING + SECONDS_RADIAL_WIDTH)
 		));
 	#endif
 	ADD(secs_line);
@@ -416,7 +418,7 @@ static void powerup() {
 		return; // Don't repeat
 	}
 	playing_powerup = true;
-
+	
 	powerdown();  // Hide everything first
 	light_enable(true); // Keep the light on throughout the animation
 	app_timer_register( 150, &powerup_lines, NULL);
@@ -432,10 +434,14 @@ static void powerup() {
 static void draw_sep_line(struct Layer *layer, GContext *ctx) {
 	#ifdef PBL_ROUND
 	// Draw the circle inside the seconds lines.
+	// We inset here a bit so the very edges don't get clipped.
+	GRect bounds = grect_inset(layer_get_bounds(layer), 
+		GEdgeInsets(SECONDS_INNER_PADDING)
+	);
 	// Find the center and radius (average of two diameters).
 	graphics_draw_circle(ctx, 
-		grect_center_point(&layer_get_bounds(layer)), 
-		(bounds.size.w + bounds.size.h)/2
+		grect_center_point(&bounds), 
+		(bounds.size.w + bounds.size.h) / 4
 	);
 	#else
 	// Draw the line that sepaarates seconds from the boxes or the testchamber number.
@@ -512,7 +518,9 @@ void show_main_window() {
 	layer_set_update_proc(secs_line, &draw_sep_line);
 	
 	layer_set_update_proc(icon_bg, &draw_icon_bg);
+	#ifndef PBL_ROUND
 	layer_set_update_proc(icon_line, &draw_sep_line);
+	#endif
 	
 	window_stack_push(main_win, true);
 }
