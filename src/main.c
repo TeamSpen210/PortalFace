@@ -313,7 +313,8 @@ void powerup_lines(void *val) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Lines");
 	SHOW(icon_line);
 	SHOW(secs_line);
-}	
+}
+
 void powerup_logo(void *val) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Logo");
 	SHOW(ap_logo);
@@ -323,7 +324,8 @@ void powerup_logo(void *val) {
 	HIDE(min_dig_one);
 	HIDE(hour_text);
 	HIDE(icon_bg);
-}		
+}
+
 void powerup_nums(void *val) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Nums");
 	SHOW(min_dig_ten);
@@ -384,7 +386,7 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	time_t temp = time(NULL); 
 	struct tm *cur_time = localtime(&temp);
 	graphics_context_set_stroke_color(ctx, GColorBlack);
-	
+
 #if defined(PBL_RECT) // Bar-graph display
 	#ifdef PBL_COLOR
 	// On color Pebbles, draw 'off' bars in grey
