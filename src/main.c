@@ -109,6 +109,7 @@ GRect box_pos(int off, bool second_row) {
 }
 
 static void initialise_ui(void) {
+	#define ADD(child_layer) layer_add_child(root_layer, (Layer *)child_layer)
 	main_win = window_create();
 	
 	#ifdef PBL_SDK_2
@@ -129,12 +130,12 @@ static void initialise_ui(void) {
 			GEdgeInsets(SECONDS_OUTER_PADDING)
 		));
 	#endif
-	layer_add_child(root_layer, (Layer *)secs_layer);
+	ADD(secs_layer);
 	
 	// bluetooth bitmap
 	box_blue = bitmap_layer_create(box_pos(0, false));
 	bitmap_layer_set_bitmap(box_blue, res_bluetooth_off);
-	layer_add_child(root_layer, (Layer *)box_blue);
+	ADD(box_blue);
 
 	// battery bitmap
 	box_batt = bitmap_layer_create(box_pos(4, false));
@@ -144,7 +145,7 @@ static void initialise_ui(void) {
 	// aperture logo
 	ap_logo = bitmap_layer_create(GRect(10, 150, 65, 16));
 	bitmap_layer_set_bitmap(ap_logo, res_ap_logo);
-	layer_add_child(root_layer, (Layer *)ap_logo);
+	ADD(ap_logo);
 
 	// weekday textbox
 	box_date = text_layer_create(GRect(27 + 1*18, 110 - 1, 16, 16));
@@ -152,16 +153,16 @@ static void initialise_ui(void) {
 	text_layer_set_text_color(box_date, GColorBlack);
 	text_layer_set_text_alignment(box_date, GTextAlignmentCenter);
 	text_layer_set_font(box_date, fonts_get_system_font(FONT_KEY_GOTHIC_14));
-	layer_add_child(root_layer, (Layer *)box_date);
+	ADD(box_date);
 	
 	// am/pm bitmap
 	box_apm = bitmap_layer_create(box_pos(3, false));
 	bitmap_layer_set_bitmap(box_apm, res_am);
-	layer_add_child(root_layer, (Layer *)box_apm);
+	ADD(box_apm);
 	
 	// seconds line
 	secs_line = layer_create(GRect(10, 85, 123, 1));
-	layer_add_child(root_layer, (Layer *)secs_line);
+	ADD(secs_line);
 	
 	
 	#if defined(PBL_RECT) // On rectangular displays, offset upwards
@@ -184,8 +185,8 @@ static void initialise_ui(void) {
 		));
 	#endif
 	
-	layer_add_child(root_layer, (Layer *)min_dig_ten);
-	layer_add_child(root_layer, (Layer *)min_dig_one);
+	ADD(min_dig_ten);
+	ADD(min_dig_one);
 	
 	// hour text
 	hour_text = text_layer_create(GRect(8, 68, 32, 15));
@@ -194,22 +195,22 @@ static void initialise_ui(void) {
 	text_layer_set_text(hour_text, "??");
 	text_layer_set_text_alignment(hour_text, GTextAlignmentRight);
 	text_layer_set_font(hour_text, fonts_get_system_font(FONT_KEY_GOTHIC_14));
-	layer_add_child(root_layer, (Layer *)hour_text);	
+	ADD(hour_text);	
 	
 	// Icon line
 	icon_line = layer_create(GRect(10, 105, 123, 1));
-	layer_add_child(root_layer, (Layer *)icon_line);
+	ADD(icon_line);
 	
 	//Icon background
 	icon_bg = layer_create(GRect(10, 109, 123, 40));
-	layer_add_child(root_layer, (Layer *)icon_bg);
+		ADD(icon_bg);
 	
 	// Init all the bitmap icons
 	ico_layers[0] = bitmap_layer_create(box_pos(2, false));
 	for (int i=1; i<6; i++) {
 		ico_layers[i] = bitmap_layer_create(box_pos(i, true));
 		bitmap_layer_set_bitmap(ico_layers[i], ico_bitmap[i]);
-		layer_add_child(root_layer, (Layer *)ico_layers[i]);
+		ADD(ico_layers[i]);
 	}
 }
 
