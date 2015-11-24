@@ -1,4 +1,5 @@
 #include <pebble.h>
+#include "autoconfig.h"
 	
 static Window *main_win;
 static BitmapLayer *box_blue;
@@ -733,6 +734,7 @@ static void init() {
 int main() {
 	srand(time(NULL));
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Starting up");
+    autoconfig_init();
 	
 	init();
 	
@@ -761,6 +763,8 @@ int main() {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Shuffled icons");
 	
 	app_event_loop();
+	
+    autoconfig_deinit();
 	
 	tick_timer_service_unsubscribe();
 	battery_state_service_unsubscribe();
