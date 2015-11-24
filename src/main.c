@@ -11,7 +11,9 @@ static TextLayer *hour_text;
 static Layer *secs_layer;
 // The line above and below the seconds display
 static Layer *secs_line;
-static Layer *icon_line;
+#ifndef PBL_ROUND
+static Layer *icon_line; // There's only one on round displays
+#endif
 
 // The backround for icons
 static Layer *icon_bg;
@@ -55,11 +57,11 @@ static GBitmap *res_ap_logo;
 static bool charge_vibe_done = 1;
 static bool bluetooth_vibe_done = 1;
 
-const int MIN_PADDING = 4; // Distance beween seconds icons
+const int MIN_PADDING = 4; // Distance beween seconds icons and edge of screen
 const int SECONDS_RADIAL_WIDTH = 10; // Length of seconds lines on round display
 const int SECONDS_OUTER_PADDING = 4; // Distance from edge
-const int SECONDS_RADIAL_COUNT = 120 ; // Number of radial seconds lines per second
-const int SECONDS_PADDING = 2; // Distance between lines and circles
+const int SECONDS_RADIAL_COUNT = 120 ; // Number of radial seconds lines
+const int SECONDS_PADDING = 2; // Distance between inner line and seconds bar ring
 
 // Distance the round logo and hour text are inset from the top and bottom
 const int ROUND_VERT_INSET = 24;
@@ -100,6 +102,7 @@ BitmapLayer *ico_layers[6];
 
 GRect box_pos(int off, bool second_row) {
 	// Return the rect matching a specific box position.
+	// If second_row is true, it's the right/bottom row.
 	return GRect(
 	#ifdef PBL_ROUND
 		(second_row) ? 80+24+18 : 80-24-18, 
@@ -176,7 +179,15 @@ static void initialise_ui(void) {
 	ADD(box_apm);
 	
 	// seconds line
-	secs_line = layer_create(GRect(10, 85, 123, 1));
+	#if defined(PBL_RECT)
+		secs_line = layer_create(GRect(10, 85, 123, 1));
+	#elif defined(PBL_ROUND)
+		// On round watches, it's positioned inside the seconds ring.
+		// We need to inset the width of the seconds ring, plus our paddings.
+		secs_line = layer_create(grect_inset(bounds, GEdgeInsets(
+			SECONDS_OUTER_PADDING + SECONDS_RADIAL_WIDTH + SECONDS_PADDING
+		));
+	#endif
 	ADD(secs_line);
 	
 	
@@ -204,17 +215,33 @@ static void initialise_ui(void) {
 	ADD(min_dig_one);
 	
 	// hour text
-	hour_text = text_layer_create(GRect(8, 68, 32, 15));
+	#if defined(PBL_RECT)
+		hour_text = text_layer_create(GRect(8, 68, 32, 15));
+	#elif defined(PBL_ROUND)
+		// This is positioned opposite to the aperture logo
+		GRect hour_pos = (GRect){.size = GSize(32, 15)};
+		grect_align(&hour_pos, &bounds, GAlignTop, false);
+		hour_text = text_layer_create(grect_inset(
+			ap_logo_pos,
+			GEdgeInsets(ROUND_VERT_INSET, 0, -ROUND_VERT_INSET)
+		));
+	#endif
+	
 	text_layer_set_background_color(hour_text, GColorWhite);
 	text_layer_set_text_color(hour_text, GColorBlack);
 	text_layer_set_text(hour_text, "??");
-	text_layer_set_text_alignment(hour_text, GTextAlignmentRight);
+	text_layer_set_text_alignment(hour_text, PBL_IF_ROUND_ELSE(
+		GTextAlignmentCenter,
+		GTextAlignmentRight
+		));
 	text_layer_set_font(hour_text, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 	ADD(hour_text);	
 	
-	// Icon line
+	// Icon line - we only use 1 on round watches
+	#ifndef PBL_ROUND
 	icon_line = layer_create(GRect(10, 105, 123, 1));
 	ADD(icon_line);
+	#endif
 	
 	//Icon background - on round it's split up!
 	#ifdef PBL_ROUND
@@ -304,7 +331,9 @@ static void handle_window_unload(Window* window) {
 void powerdown() {
 	// Hide all the icons.
 	HIDE(icon_bg);
+	#ifndef PBL_ROUND
 	HIDE(icon_line);
+	#endif
 	
 	HIDE(box_blue);
 	HIDE(box_batt);
@@ -326,7 +355,9 @@ void powerdown() {
 
 void powerup_lines(void *val) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Lines");
+	#ifndef PBL_ROUND
 	SHOW(icon_line);
+	#endif
 	SHOW(secs_line);
 }
 
@@ -394,8 +425,17 @@ static void powerup() {
 }
 
 static void draw_sep_line(struct Layer *layer, GContext *ctx) {
+	#ifdef PBL_ROUND
+	// Draw the circle inside the seconds lines.
+	// Find the center and radius (average of two diameters).
+	graphics_draw_circle(ctx, 
+		grect_center_point(&layer_get_bounds(layer)), 
+		(bounds.size.w + bounds.size.h)/2
+	);
+	#else
 	// Draw the line that sepaarates seconds from the boxes or the testchamber number.
 	graphics_draw_line(ctx, GPoint(0,0), GPoint(122, 0));
+	#endif
 }
 
 static void draw_seconds(struct Layer *layer, GContext *ctx) {
