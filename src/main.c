@@ -99,8 +99,8 @@ GRect box_pos(int off, bool second_row) {
 	// Return the rect matching a specific box position.
 	return GRect(
 	#ifdef PBL_ROUND
-		(second_row) ? 60-32: 60+64, 
-		40 + (off) * 18,
+		(second_row) ? 80+24+18 : 80-24-18, 
+		(180 - 5*18)/2 + (off) * 18,
 	#else
 		27 + (off)*18,
 		110 + ((second_row) ? 18: 0),
