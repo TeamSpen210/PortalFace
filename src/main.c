@@ -7,11 +7,16 @@ static BitmapLayer *box_apm;
 static TextLayer *box_date;
 static TextLayer *hour_text;
 
+// The moving bars
 static Layer *secs_layer;
+// The line above and below the seconds display
 static Layer *secs_line;
-
-static Layer *icon_bg;
 static Layer *icon_line;
+
+// The backround for icons
+static Layer *icon_bg;
+
+// Minute digits
 static BitmapLayer *min_dig_ten;
 static BitmapLayer *min_dig_one;
 
