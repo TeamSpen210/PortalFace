@@ -60,6 +60,9 @@ const int SECONDS_RADIAL_WIDTH = 10; // Length of seconds lines on round display
 const int SECONDS_OUTER_PADDING = 4; // Distance from edge
 const int SECONDS_RADIAL_COUNT = 120 ; // Number of radial seconds lines per second
 const int SECONDS_PADDING = 2; // Distance between lines and circles
+
+// Distance the round logo and hour text are inset from the top and bottom
+const int ROUND_VERT_INSET = 24;
 	
 int ICO_IDS[] = {
 	RESOURCE_ID_TS_ICO_1,
@@ -143,7 +146,17 @@ static void initialise_ui(void) {
 	layer_add_child(root_layer, (Layer *)box_batt);
 	
 	// aperture logo
-	ap_logo = bitmap_layer_create(GRect(10, 150, 65, 16));
+	// On round displays it's just the aperture, and bottom-centered
+	#ifdef PBL_RECT
+		ap_logo = bitmap_layer_create(GRect(10, 150, 65, 16));
+	#else
+		GRect ap_logo_pos = (GRect){.size = GSize(16, 16)};
+		grect_align(&ap_logo_pos, &bounds, GAlignBottom, false);
+		ap_logo = bitmap_layer_create(grect_inset(
+			ap_logo_pos,
+			GEdgeInsets(-ROUND_VERT_INSET, 0, ROUND_VERT_INSET)
+		));
+	#endif
 	bitmap_layer_set_bitmap(ap_logo, res_ap_logo);
 	ADD(ap_logo);
 
