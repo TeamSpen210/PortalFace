@@ -371,6 +371,9 @@ void powerup_progress(void *val) {
 	playing_powerup = false;
 }
 
+#undef SHOW
+#undef HIDE
+
 static void powerup() {
 	// Play the light flickering animation.
 	if (playing_powerup){
