@@ -219,9 +219,13 @@ static void initialise_ui(void) {
 		ADD(icon_bg);
 	
 	// Init all the bitmap icons
-	ico_layers[0] = bitmap_layer_create(box_pos(2, false));
-	for (int i=1; i<6; i++) {
-		ico_layers[i] = bitmap_layer_create(box_pos(i, true));
+	for (int i=0; i<6; i++) {
+		if (i==5) {
+			// This one is in a different position
+			ico_layers[i] = bitmap_layer_create(box_pos(2, false));
+		} else {
+			ico_layers[i] = bitmap_layer_create(box_pos(i, true));
+		}
 		bitmap_layer_set_bitmap(ico_layers[i], ico_bitmap[i]);
 		ADD(ico_layers[i]);
 	}
