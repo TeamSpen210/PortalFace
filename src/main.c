@@ -282,6 +282,11 @@ static void handle_window_unload(Window* window) {
 	text_layer_destroy(hour_text);
 	
 	layer_destroy(secs_layer);
+	
+	#ifndef PBL_ROUND
+	layer_destroy(icon_line);
+	#endif
+	layer_destroy(secs_line);
 
 	bitmap_layer_destroy(min_dig_ten);
 	bitmap_layer_destroy(min_dig_one);
