@@ -27,16 +27,7 @@ static BitmapLayer *ap_logo;
 static GBitmap *res_am;
 static GBitmap *res_pm;
 
-static GBitmap *res_digit_0;
-static GBitmap *res_digit_1;
-static GBitmap *res_digit_2;
-static GBitmap *res_digit_3;
-static GBitmap *res_digit_4;
-static GBitmap *res_digit_5;
-static GBitmap *res_digit_6;
-static GBitmap *res_digit_7;
-static GBitmap *res_digit_8;
-static GBitmap *res_digit_9;
+static GBitmap *res_digit[10];
 
 static GBitmap *res_batt_10;
 static GBitmap *res_batt_20;
@@ -96,6 +87,19 @@ int ICO_IDS[] = {
 };
 const int NUM_ICONS = 26;
 
+int RES_DIGIT_IDS[] = {
+	RESOURCE_ID_IMG_NUM_0,
+	RESOURCE_ID_IMG_NUM_1,
+	RESOURCE_ID_IMG_NUM_2,
+	RESOURCE_ID_IMG_NUM_3,
+	RESOURCE_ID_IMG_NUM_4,
+	RESOURCE_ID_IMG_NUM_5,
+	RESOURCE_ID_IMG_NUM_6,
+	RESOURCE_ID_IMG_NUM_7,
+	RESOURCE_ID_IMG_NUM_8,
+	RESOURCE_ID_IMG_NUM_9,
+};
+
 GBitmap *ico_bitmap[6];
 
 BitmapLayer *ico_layers[6];
@@ -124,9 +128,7 @@ static void initialise_ui(void) {
 	
 	struct Layer *root_layer = window_get_root_layer(main_win);
 	
-	#ifdef PBL_ROUND
-	GRect bounds = layer_get_bounds(root_layer);
-	#endif
+	GRect bounds = layer_get_unobstructed_bounds(root_layer);
 
 	// seconds bar layer. On rect displays it's constrained, but it covers everything on round.
 	#ifdef PBL_RECT
@@ -303,16 +305,9 @@ static void handle_window_unload(Window* window) {
 	gbitmap_destroy(res_am);
 	gbitmap_destroy(res_pm);
 
-	gbitmap_destroy(res_digit_0);
-	gbitmap_destroy(res_digit_1);
-	gbitmap_destroy(res_digit_2);
-	gbitmap_destroy(res_digit_3);
-	gbitmap_destroy(res_digit_4);
-	gbitmap_destroy(res_digit_5);
-	gbitmap_destroy(res_digit_6);
-	gbitmap_destroy(res_digit_7);
-	gbitmap_destroy(res_digit_8);
-	gbitmap_destroy(res_digit_9);
+	for (int i=0; i<10; i++) {
+		gbitmap_destroy(res_digit[i]);
+	}
 
 	gbitmap_destroy(res_batt_10);
 	gbitmap_destroy(res_batt_20);
@@ -544,38 +539,7 @@ void bluetooth_check(bool connected) {
 
 static void display_num(char num, BitmapLayer *bitmap) {
 	// Display the number in the minute bitmaps.
-	switch(num) {
-		case '0':
-		bitmap_layer_set_bitmap(bitmap, res_digit_0);
-		break;
-		case '1':
-		bitmap_layer_set_bitmap(bitmap, res_digit_1);
-		break;
-		case '2':
-		bitmap_layer_set_bitmap(bitmap, res_digit_2);
-		break;
-		case '3':
-		bitmap_layer_set_bitmap(bitmap, res_digit_3);
-		break;
-		case '4':
-		bitmap_layer_set_bitmap(bitmap, res_digit_4);
-		break;
-		case '5':
-		bitmap_layer_set_bitmap(bitmap, res_digit_5);
-		break;
-		case '6':
-		bitmap_layer_set_bitmap(bitmap, res_digit_6);
-		break;
-		case '7':
-		bitmap_layer_set_bitmap(bitmap, res_digit_7);
-		break;
-		case '8':
-		bitmap_layer_set_bitmap(bitmap, res_digit_8);
-		break;
-		case '9':
-		bitmap_layer_set_bitmap(bitmap, res_digit_9);
-		break;
-	}
+	bitmap_layer_set_bitmap(bitmap, res_digit[num - '0']);
 }
 
 static void shuffle_icons() {
@@ -714,16 +678,9 @@ static void init() {
 	res_batt_90  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_9);
 	res_batt_100 = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_10);
 
-	res_digit_0 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_0);
-	res_digit_1 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_1);
-	res_digit_2 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_2);
-	res_digit_3 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_3);
-	res_digit_4 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_4);
-	res_digit_5 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_5);
-	res_digit_6 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_6);
-	res_digit_7 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_7);
-	res_digit_8 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_8);
-	res_digit_9 = gbitmap_create_with_resource(RESOURCE_ID_IMG_NUM_9);
+	for (int i=0; i<10; i++) {
+		res_digit[i] = gbitmap_create_with_resource(RES_DIGIT_IDS[i]);
+	}
 	
 	for (int i=0; i<6; i++) {
 		ico_bitmap[i] = gbitmap_create_with_resource(ICO_IDS[i]);
