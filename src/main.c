@@ -53,6 +53,9 @@ static GBitmap *res_ap_logo;
 static bool charge_vibe_done = 1;
 static bool bluetooth_vibe_done = 1;
 
+// During powerup, play an animation of the seconds bar increasing to the value.
+static int max_seconds_bar = 30;
+
 const int MIN_PADDING = 4; // Distance beween minute digits
 const int SECONDS_RADIAL_WIDTH = 10; // Length of seconds lines on round display
 const int SECONDS_OUTER_PADDING = 4; // Distance from edge
@@ -124,7 +127,6 @@ GRect box_pos(int off, bool second_row) {
 }
 
 static void initialise_ui(void) {
-	#define ADD(child_layer) layer_add_child(root_layer, (Layer *)child_layer)
 	main_win = window_create();
 	
 	root_layer = window_get_root_layer(main_win);
@@ -410,10 +412,23 @@ void powerup_boxes(void *val) {
 }
 
 static bool playing_powerup = false;
+	
+void powerup_progress_start(void *val) {
+	// Show the seconds, but blank them
+	max_seconds_bar = 0;
+	layer_mark_dirty(secs_layer);
+	SHOW(secs_layer);
+}
 
 void powerup_progress(void *val) {
+	max_seconds_bar += 2;
+	layer_mark_dirty(secs_layer);
+}
+
+void powerup_done(void *val) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Complete");
-	SHOW(secs_layer);
+	
+	max_seconds_bar = 60;
 	
 	light_enable_interaction(); // Return light to normal
 	light_enable(false);
@@ -437,9 +452,14 @@ static void powerup() {
 	app_timer_register( 400, &powerup_logo, NULL);
 	app_timer_register( 600, &powerup_nums, NULL);
 	app_timer_register( 800, &powerup_logo, NULL);
+	app_timer_register( 900, &powerup_progress_start, NULL);
 	app_timer_register( 900, &powerup_nums, NULL);
 	app_timer_register(1100, &powerup_boxes, NULL);
-	app_timer_register(1800, &powerup_progress, NULL);
+	
+	for(int i=1125; i <= 1900; i+=25) {
+		app_timer_register(i, &powerup_progress, NULL);
+	}
+	app_timer_register(1900, &powerup_done, NULL);
 }
 
 static void draw_sep_line(struct Layer *layer, GContext *ctx) {
@@ -468,14 +488,15 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	graphics_context_set_stroke_color(ctx, GColorBlack);
 	
 #if defined(PBL_RECT) // Bar-graph display
+	// In powerup mode, limit to max_seconds_bar size at most.
 	#ifdef PBL_COLOR
 	// On color Pebbles, draw 'off' bars in grey
-	for(int i = 2; i <= 60 * 2; i += 2) {
-		if ((cur_time -> tm_sec *2) + 2 == i) {
+	for (int i = 2; i <= 60 * 2; i += 2) {
+		if ((cur_time -> tm_sec * 2) + 2 == i || i == max_seconds_bar * 2 + 2) {
 			graphics_context_set_stroke_color(ctx, GColorLightGray);
 		}
 	#else
-	for (int i = 2; i <= (cur_time->tm_sec * 2); i += 2) {
+	for (int i = 2; (i <= cur_time->tm_sec * 2 && i <= max_seconds_bar * 2); i += 2) {
 	#endif
 		graphics_draw_line(ctx, GPoint(i, 0), GPoint(i, 8));
 	}
