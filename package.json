@@ -1,0 +1,296 @@
+{
+  "version": "2.1.0",
+  "author": "TeamSpen210",
+  "private": true,
+  "dependencies": {},
+  "keywords": [
+    "pebble-app"
+  ],
+  "pebble": {
+    "sdkVersion": "3",
+    "resources": {
+      "media": [
+        {
+          "type": "png",
+          "name": "IMG_NUM_0",
+          "file": "images/numbers/num_0.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_1",
+          "file": "images/numbers/num_1.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_2",
+          "file": "images/numbers/num_2.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_3",
+          "file": "images/numbers/num_3.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_4",
+          "file": "images/numbers/num_4.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_5",
+          "file": "images/numbers/num_5.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_6",
+          "file": "images/numbers/num_6.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_7",
+          "file": "images/numbers/num_7.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_8",
+          "file": "images/numbers/num_8.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_9",
+          "file": "images/numbers/num_9.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_AP_LOGO",
+          "file": "images/logo_aperture.png"
+        },
+        {
+          "menuIcon": true,
+          "type": "png",
+          "name": "APP_ICON",
+          "file": "images/icon.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_PM",
+          "file": "images/ico_pm.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_AM",
+          "file": "images/ico_am.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_BLUE_ON",
+          "file": "images/blue_on.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_BLUE_OFF",
+          "file": "images/blue_off.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_BAT_1",
+          "file": "images/battery/aper_1.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_BAT_2",
+          "file": "images/battery/aper_2.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_BAT_3",
+          "file": "images/battery/aper_3.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_BAT_4",
+          "file": "images/battery/aper_4.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_BAT_5",
+          "file": "images/battery/aper_5.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_BAT_6",
+          "file": "images/battery/aper_6.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_BAT_7",
+          "file": "images/battery/aper_7.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_BAT_8",
+          "file": "images/battery/aper_8.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_BAT_9",
+          "file": "images/battery/cross.png"
+        },
+        {
+          "type": "png",
+          "name": "IMG_BAT_10",
+          "file": "images/battery/check.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_1",
+          "file": "images/icons/ico_1.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_2",
+          "file": "images/icons/ico_2.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_3",
+          "file": "images/icons/ico_3.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_4",
+          "file": "images/icons/ico_4.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_5",
+          "file": "images/icons/ico_5.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_6",
+          "file": "images/icons/ico_6.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_7",
+          "file": "images/icons/ico_7.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_8",
+          "file": "images/icons/ico_8.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_9",
+          "file": "images/icons/ico_9.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_10",
+          "file": "images/icons/ico_10.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_11",
+          "file": "images/icons/ico_11.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_12",
+          "file": "images/icons/ico_12.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_13",
+          "file": "images/icons/ico_13.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_14",
+          "file": "images/icons/ico_14.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_15",
+          "file": "images/icons/ico_15.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_16",
+          "file": "images/icons/ico_16.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_17",
+          "file": "images/icons/ico_17.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_18",
+          "file": "images/icons/ico_18.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_19",
+          "file": "images/icons/ico_19.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_20",
+          "file": "images/icons/ico_20.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_21",
+          "file": "images/icons/ico_21.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_22",
+          "file": "images/icons/ico_22.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_23",
+          "file": "images/icons/ico_23.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_24",
+          "file": "images/icons/ico_24.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_25",
+          "file": "images/icons/ico_25.png"
+        },
+        {
+          "type": "png",
+          "name": "TS_ICO_26",
+          "file": "images/icons/ico_26.png"
+        }
+      ]
+    },
+    "projectType": "native",
+    "uuid": "2f03bfbc-a731-4e83-84af-3642e6ecd52d",
+    "messageKeys": {},
+    "enableMultiJS": false,
+    "displayName": "Test Chamber Sign",
+    "watchapp": {
+      "onlyShownOnCommunication": false,
+      "hiddenApp": false,
+      "watchface": true
+    },
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk"
+    ],
+    "capabilities": [
+      ""
+    ]
+  },
+  "name": "Test Sign"
+}
