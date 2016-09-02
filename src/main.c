@@ -7,6 +7,11 @@ static BitmapLayer *box_apm;
 static TextLayer *box_date;
 static TextLayer *hour_text;
 
+// Main window layer
+static Layer *root_layer;
+// Slides up for quickview...
+static Layer *slide_layer;
+
 // The moving bars
 static Layer *secs_layer;
 // The line above and below the seconds display
@@ -122,13 +127,44 @@ static void initialise_ui(void) {
 	#define ADD(child_layer) layer_add_child(root_layer, (Layer *)child_layer)
 	main_win = window_create();
 	
-	#ifdef PBL_SDK_2
-	window_set_fullscreen(main_win, true);
+	root_layer = window_get_root_layer(main_win);
+	
+	GRect bounds = layer_get_bounds(root_layer);
+	
+	
+	#if defined(PBL_RECT) // On rectangular displays, offset upwards
+		min_dig_ten = bitmap_layer_create(GRect(71 - 32 - MIN_PADDING/2, 5, 32, 80));
+		min_dig_one = bitmap_layer_create(GRect(71 + MIN_PADDING/2, 5, 32, 80));
+	#elif defined(PBL_ROUND) // Round displays center the icons
+		GRect min_pos = (GRect){.size = GSize(64 + MIN_PADDING, 80)};
+		grect_align(&min_pos, &bounds, GAlignCenter, false);
+		
+		// minute tens digit
+		min_dig_ten = bitmap_layer_create(grect_inset(
+			min_pos, 
+			GEdgeInsets(0, MIN_PADDING/2 + 32, 0, -MIN_PADDING/2)
+		));
+
+		// minte ones digit
+		min_dig_one = bitmap_layer_create(grect_inset(
+			min_pos, 
+			GEdgeInsets(0, -MIN_PADDING/2, 0, MIN_PADDING/2 + 32)
+		));
 	#endif
 	
-	struct Layer *root_layer = window_get_root_layer(main_win);
+	// The digits don't move, they get replaced by a smaller display
+	layer_add_child(root_layer, (Layer *)min_dig_ten);
+	layer_add_child(root_layer, (Layer *)min_dig_one);
 	
-	GRect bounds = layer_get_unobstructed_bounds(root_layer);
+	
+	#ifdef PBL_RECT
+		slide_layer = layer_create(bounds);
+		layer_add_child(root_layer, (Layer *)slide_layer);
+		
+		#define ADD(child_layer) layer_add_child(slide_layer, (Layer *)child_layer)
+	#else
+		#define ADD(child_layer) layer_add_child(root_layer, (Layer *)child_layer)
+	#endif
 
 	// seconds bar layer. On rect displays it's constrained, but it covers everything on round.
 	#ifdef PBL_RECT
@@ -165,7 +201,8 @@ static void initialise_ui(void) {
 		));
 	#endif
 	bitmap_layer_set_bitmap(ap_logo, res_ap_logo);
-	ADD(ap_logo);
+	// The logo doesn't move, it just disappears.
+	layer_add_child(root_layer, (Layer *)ap_logo);
 
 	// weekday textbox
 	GRect box_date_pos = box_pos(1, false);
@@ -194,30 +231,6 @@ static void initialise_ui(void) {
 	#endif
 	ADD(secs_line);
 	
-	
-	#if defined(PBL_RECT) // On rectangular displays, offset upwards
-		min_dig_ten = bitmap_layer_create(GRect(71 - 32 - MIN_PADDING/2, 5, 32, 80));
-		min_dig_one = bitmap_layer_create(GRect(71 + MIN_PADDING/2, 5, 32, 80));
-	#elif defined(PBL_ROUND) // Round displays center the icons
-		GRect min_pos = (GRect){.size = GSize(64 + MIN_PADDING, 80)};
-		grect_align(&min_pos, &bounds, GAlignCenter, false);
-		
-		// minute tens digit
-		min_dig_ten = bitmap_layer_create(grect_inset(
-			min_pos, 
-			GEdgeInsets(0, MIN_PADDING/2 + 32, 0, -MIN_PADDING/2)
-		));
-
-		// minte ones digit
-		min_dig_one = bitmap_layer_create(grect_inset(
-			min_pos, 
-			GEdgeInsets(0, -MIN_PADDING/2, 0, MIN_PADDING/2 + 32)
-		));
-	#endif
-	
-	ADD(min_dig_ten);
-	ADD(min_dig_one);
-	
 	// hour text
 	#if defined(PBL_RECT)
 		hour_text = text_layer_create(GRect(8, 68, 32, 15));
@@ -240,6 +253,7 @@ static void initialise_ui(void) {
 		));
 	text_layer_set_font(hour_text, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 	ADD(hour_text);	
+	
 	
 	// Icon line - we only use 1 on round watches
 	#ifndef PBL_ROUND
@@ -286,6 +300,8 @@ static void handle_window_unload(Window* window) {
 	text_layer_destroy(hour_text);
 	
 	layer_destroy(secs_layer);
+	layer_destroy(root_layer);
+	layer_destroy(slide_layer);
 	
 	#ifndef PBL_ROUND
 	layer_destroy(icon_line);
