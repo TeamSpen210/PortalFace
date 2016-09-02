@@ -310,7 +310,6 @@ static void handle_window_unload(Window* window) {
 	text_layer_destroy(hour_text);
 	
 	layer_destroy(secs_layer);
-	layer_destroy(root_layer);
 	layer_destroy(slide_layer);
 	
 	#ifndef PBL_ROUND
@@ -694,6 +693,12 @@ static void unobstructed_end(void *context) {
     layer_set_hidden((Layer *)ap_logo, false);
     layer_set_hidden((Layer *)min_dig_one, false);
     layer_set_hidden((Layer *)min_dig_ten, false);
+    
+    // Force the slide-frame to be in the correct position
+    GRect slide_frame = layer_get_frame((Layer *) slide_layer);
+    slide_frame.origin.y = 0;
+    layer_set_frame((Layer *) slide_layer, slide_frame);
+    layer_mark_dirty((Layer *) slide_layer);
   }
 }
   
