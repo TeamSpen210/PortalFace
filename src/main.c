@@ -52,6 +52,7 @@ static GBitmap *res_ap_logo;
 
 static bool charge_vibe_done = 1;
 static bool bluetooth_vibe_done = 1;
+static bool g_screen_is_obstructed = false;
 
 // During powerup, play an animation of the seconds bar increasing to the value.
 static int max_seconds_bar = 30;
@@ -132,6 +133,7 @@ static void initialise_ui(void) {
 	root_layer = window_get_root_layer(main_win);
 	
 	GRect bounds = layer_get_bounds(root_layer);
+	GRect unobstucted_bounds = layer_get_unobstructed_bounds(root_layer);
 	
 	
 	#if defined(PBL_RECT) // On rectangular displays, offset upwards
@@ -160,7 +162,13 @@ static void initialise_ui(void) {
 	
 	
 	#ifdef PBL_RECT
-		slide_layer = layer_create(bounds);
+		
+		slide_layer = layer_create(GRect(
+			0,
+			-(bounds.size.h - unobstucted_bounds.size.h)*2,
+			bounds.size.w,
+			bounds.size.h
+		));
 		layer_add_child(root_layer, (Layer *)slide_layer);
 		
 		#define ADD(child_layer) layer_add_child(slide_layer, (Layer *)child_layer)
@@ -541,8 +549,20 @@ static void draw_icon_bg(struct Layer *layer, GContext *ctx) {
 	#endif
 }
 
+static void unobstructed_start(GRect final_area, void *context);
+static void unobstructed_anim(AnimationProgress progress, void *context);
+static void unobstructed_end(void *context);
+
 void show_main_window() {
 	initialise_ui();
+	
+    static UnobstructedAreaHandlers handlers = {
+        .will_change = &unobstructed_start,
+        .change = &unobstructed_anim,
+        .did_change = &unobstructed_end
+    };
+	unobstructed_area_service_subscribe(handlers, NULL);
+  
 	window_set_window_handlers(main_win, (WindowHandlers) {
 		.unload = handle_window_unload,
 	});
@@ -651,6 +671,40 @@ static void battery_update(BatteryChargeState state) {
 		{
 		charge_vibe_done = 0;
 	}
+}
+
+// Handle animating when quickview appears / unobstructed-area
+static void unobstructed_start(GRect final_area, void *context) {
+  GRect full_bounds = layer_get_bounds((Layer *)root_layer);
+  if (!grect_equal(&full_bounds, &final_area)) {
+    // Appearing, hide things
+    layer_set_hidden((Layer *)ap_logo, true);
+    layer_set_hidden((Layer *)min_dig_one, true);
+    layer_set_hidden((Layer *)min_dig_ten, true);
+  }
+}
+
+// Run while it's changing
+static void unobstructed_end(void *context) {
+  GRect full_bounds = layer_get_bounds((Layer *)root_layer);
+  GRect bounds = layer_get_unobstructed_bounds((Layer *)root_layer);
+  
+  if (grect_equal(&full_bounds, &bounds)) {
+    // Screen is no longer obstructed, show stuff
+    layer_set_hidden((Layer *)ap_logo, false);
+    layer_set_hidden((Layer *)min_dig_one, false);
+    layer_set_hidden((Layer *)min_dig_ten, false);
+  }
+}
+  
+static void unobstructed_anim(AnimationProgress progress, void *context) {
+  GRect full_bounds = layer_get_bounds((Layer *)root_layer);
+  GRect bounds = layer_get_unobstructed_bounds((Layer *)root_layer);
+  
+  GRect slide_frame = layer_get_frame((Layer *) slide_layer);
+  
+  slide_frame.origin.y = -(full_bounds.size.h - bounds.size.w)*2;
+  layer_set_frame((Layer *) slide_layer, slide_frame);
 }
 
 static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
