@@ -55,7 +55,7 @@ static bool bluetooth_vibe_done = 1;
 static bool g_screen_is_obstructed = false;
 
 // During powerup, play an animation of the seconds bar increasing to the value.
-static int max_seconds_bar = 30;
+static int max_seconds_bar = 120;
 
 const int MIN_PADDING = 4; // Distance beween minute digits
 const int SECONDS_RADIAL_WIDTH = 10; // Length of seconds lines on round display
@@ -163,12 +163,7 @@ static void initialise_ui(void) {
 	
 	#ifdef PBL_RECT
 		
-		slide_layer = layer_create(GRect(
-			0,
-			-(bounds.size.h - unobstucted_bounds.size.h)*2,
-			bounds.size.w,
-			bounds.size.h
-		));
+		slide_layer = layer_create(bounds);
 		layer_add_child(root_layer, (Layer *)slide_layer);
 		
 		#define ADD(child_layer) layer_add_child(slide_layer, (Layer *)child_layer)
@@ -298,6 +293,20 @@ static void initialise_ui(void) {
 		bitmap_layer_set_bitmap(ico_layers[i], ico_bitmap[i]);
 		ADD(ico_layers[i]);
 	}
+	
+	#ifdef PBL_RECT
+	if(!grect_equal(&unobstucted_bounds, &bounds)) {
+	    // Force the slide-frame to be in the correct position
+	    GRect slide_frame = layer_get_frame((Layer *) slide_layer);
+	    slide_frame.origin.y = -(bounds.size.h - unobstucted_bounds.size.h)*2;
+	    layer_set_frame((Layer *) slide_layer, slide_frame);
+	    layer_mark_dirty((Layer *) slide_layer);
+	    
+		layer_set_hidden((Layer *)ap_logo, true);
+	    layer_set_hidden((Layer *)min_dig_one, true);
+	    layer_set_hidden((Layer *)min_dig_ten, true);
+    }
+    #endif
 }
 
 static void handle_window_unload(Window* window) {
@@ -428,14 +437,14 @@ void powerup_progress_start(void *val) {
 }
 
 void powerup_progress(void *val) {
-	max_seconds_bar += 2;
+	max_seconds_bar += PBL_IF_ROUND_ELSE(2, 4);
 	layer_mark_dirty(secs_layer);
 }
 
 void powerup_done(void *val) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Complete");
 	
-	max_seconds_bar = 60;
+	max_seconds_bar = 120;
 	
 	light_enable_interaction(); // Return light to normal
 	light_enable(false);
@@ -463,7 +472,7 @@ static void powerup() {
 	app_timer_register( 900, &powerup_nums, NULL);
 	app_timer_register(1100, &powerup_boxes, NULL);
 	
-	for(int i=1125; i <= 1900; i+=25) {
+	for(int i=1125; i <= 1900; i += PBL_IF_ROUND_ELSE(15, 25)) {
 		app_timer_register(i, &powerup_progress, NULL);
 	}
 	app_timer_register(1900, &powerup_done, NULL);
@@ -514,7 +523,10 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	graphics_context_set_antialiased(ctx, true);
 		
 	for (int i = 0; i <= SECONDS_RADIAL_COUNT; i += 1) {
-		if ((cur_time -> tm_sec * 60 / SECONDS_RADIAL_COUNT ) + 1 == i) {
+		if ((cur_time -> tm_sec * SECONDS_RADIAL_COUNT / 60 ) + 1 == i) {
+			graphics_context_set_stroke_color(ctx, GColorLightGray);
+		}
+		if ((max_seconds_bar * SECONDS_RADIAL_COUNT / 120 ) + 1 == i) {
 			graphics_context_set_stroke_color(ctx, GColorLightGray);
 		}
 		int angle = TRIG_MAX_ANGLE * i / SECONDS_RADIAL_COUNT;
