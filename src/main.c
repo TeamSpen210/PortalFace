@@ -118,7 +118,7 @@ GRect box_pos(int off, bool second_row) {
 	// If second_row is true, it's the right/bottom row.
 	return GRect(
 	#ifdef PBL_ROUND
-		(second_row) ? 80+24+16 : 80-24-16, 
+		(second_row) ? 80+28+16 : 80-28-16, 
 		(180 - 5*18)/2 + (off) * 18,
 	#else
 		27 + (off)*18,
