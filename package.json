@@ -276,7 +276,7 @@
     "projectType": "native",
     "uuid": "2f03bfbc-a731-4e83-84af-3642e6ecd52d",
     "messageKeys": {},
-    "enableMultiJS": false,
+    "enableMultiJS": true,
     "displayName": "Test Chamber Sign",
     "watchapp": {
       "onlyShownOnCommunication": false,
@@ -286,7 +286,10 @@
     "targetPlatforms": [
       "aplite",
       "basalt",
-      "chalk"
+      "chalk",
+      "diorite",
+      "flint",
+      "emery"
     ],
     "capabilities": [
       ""
