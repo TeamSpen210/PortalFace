@@ -53,7 +53,6 @@ static GBitmap *res_bluetooth_off;
 static GBitmap *res_ap_logo;
 
 static bool charge_vibe_done = 1;
-static bool bluetooth_vibe_done = 1;
 static bool g_screen_is_obstructed = false;
 
 // During powerup, play an animation of the seconds bar increasing to the value.
@@ -605,13 +604,8 @@ void hide_main_window(void) {
 void bluetooth_check(bool connected) {
 	if (connected) {
 		bitmap_layer_set_bitmap(box_blue, res_bluetooth_on);
-		bluetooth_vibe_done = 0;
 	} else {
 		bitmap_layer_set_bitmap(box_blue, res_bluetooth_off);
-		if (!bluetooth_vibe_done) {
-			vibes_long_pulse();
-			bluetooth_vibe_done = 1;
-		}
 	}
 }
 
