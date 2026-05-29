@@ -47,6 +47,8 @@ static GBitmap *res_bluetooth_off;
 static GBitmap *res_ap_logo;
 
 static bool charge_vibe_done = true;
+// Whether the powerup sequence triggered the user light.
+static bool powerup_light_enabled = false;
 
 // During powerup, play an animation of the seconds bar increasing to the value.
 static int max_seconds_bar = 120;
@@ -454,23 +456,29 @@ void powerup_done(void *val) {
 	
 	max_seconds_bar = 120;
 	
-	light_enable_interaction(); // Return light to normal
-	light_enable(false);
-	playing_powerup = false;
+	if (powerup_light_enabled) {
+		light_enable_interaction(); // Return light to normal
+		light_enable(false);
+	}
+	playing_powerup = powerup_light_enabled = false;
 }
 
 #undef SHOW
 #undef HIDE
 
-static void powerup() {
+static void powerup(bool force_backlight) {
 	// Play the light flickering animation.
 	if (playing_powerup){
 		return; // Don't repeat
 	}
 	playing_powerup = true;
+	powerup_light_enabled = force_backlight;
 	
 	powerdown();  // Hide everything first
-	light_enable(true); // Keep the light on throughout the animation
+
+	if (force_backlight) {
+		light_enable(true); // Keep the light on throughout the animation
+	}
 	app_timer_register( 150, &powerup_lines, NULL);
 	app_timer_register( 300, &powerup_nums, NULL);
 	app_timer_register( 400, &powerup_logo, NULL);
@@ -614,7 +622,7 @@ static void display_num(char num, BitmapLayer *bitmap) {
 	bitmap_layer_set_bitmap(bitmap, res_digit[num - '0']);
 }
 
-static void shuffle_icons() {
+static void shuffle_icons(bool force_backlight) {
 	// Rearrange the icon array and apply it to the display.
 	int i, j, tmp;
 	for (i=(NUM_ICONS-1); i>0; i--){
@@ -629,12 +637,12 @@ static void shuffle_icons() {
 		ico_bitmap[i] =  gbitmap_create_with_resource(ICO_IDS[i]);
 		bitmap_layer_set_bitmap(ico_layers[i], ico_bitmap[i]);
 	}
-	powerup(); // "Restart" the screen
+	powerup(force_backlight); // "Restart" the screen
 }
 
 static void shake_handler(AccelAxisType axis, int32_t dir) {
 	// On shakes, shuffle the icons.
-	shuffle_icons();
+	shuffle_icons(true);
 }
 
 static void battery_update(BatteryChargeState state) {
@@ -735,7 +743,7 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 	}
 	
 	if ((units_changed & HOUR_UNIT) !=0) {
-		shuffle_icons();
+		shuffle_icons(false);
 		
 		static char hour_char[] = "00/19";
 		if (clock_is_24h_style()) {
@@ -804,7 +812,7 @@ int main() {
 	bluetooth_connection_service_subscribe(bluetooth_check);
 	accel_tap_service_subscribe(shake_handler);
 
-	shuffle_icons(); // also starts the powerup animation
+	shuffle_icons(true); // also starts the powerup animation
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Shuffled icons");
 
 	app_event_loop();
