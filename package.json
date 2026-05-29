@@ -158,18 +158,6 @@
         },
         {
           "type": "png",
-          "name": "IMG_BAT_9",
-          "file": "images/battery/cross.png",
-          "targetPlatforms": ["emery", "gabbro"]
-        },
-        {
-          "type": "png",
-          "name": "IMG_BAT_10",
-          "file": "images/battery/check.png",
-          "targetPlatforms": ["emery", "gabbro"]
-        },
-        {
-          "type": "png",
           "name": "TS_ICO_1",
           "file": "images/icons/ico_1.png",
           "targetPlatforms": ["emery", "gabbro"]

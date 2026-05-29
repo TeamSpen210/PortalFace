@@ -36,24 +36,17 @@ static GBitmap *res_pm;
 
 static GBitmap *res_digit[10];
 
-static GBitmap *res_batt_10;
-static GBitmap *res_batt_20;
-static GBitmap *res_batt_30;
-static GBitmap *res_batt_40;
-static GBitmap *res_batt_50;
-static GBitmap *res_batt_60;
-static GBitmap *res_batt_70;
-static GBitmap *res_batt_80;
-static GBitmap *res_batt_90;
-static GBitmap *res_batt_100;
+static GBitmap *res_batt[9];
+
+const GColor COLOR_BLUE = GColorVividCerulean;
+const GColor COLOR_ORAN = GColorChromeYellow;
 
 static GBitmap *res_bluetooth_on;
 static GBitmap *res_bluetooth_off; 
 
 static GBitmap *res_ap_logo;
 
-static bool charge_vibe_done = 1;
-static bool g_screen_is_obstructed = false;
+static bool charge_vibe_done = true;
 
 // During powerup, play an animation of the seconds bar increasing to the value.
 static int max_seconds_bar = 120;
@@ -101,7 +94,7 @@ int ICO_IDS[] = {
 };
 const int NUM_ICONS = 26;
 
-int RES_DIGIT_IDS[] = {
+const int RES_DIGIT_IDS[] = {
 	RESOURCE_ID_IMG_NUM_0,
 	RESOURCE_ID_IMG_NUM_1,
 	RESOURCE_ID_IMG_NUM_2,
@@ -112,6 +105,17 @@ int RES_DIGIT_IDS[] = {
 	RESOURCE_ID_IMG_NUM_7,
 	RESOURCE_ID_IMG_NUM_8,
 	RESOURCE_ID_IMG_NUM_9,
+};
+
+const int RES_BATT_IDS[] = {
+	RESOURCE_ID_IMG_BAT_1,
+	RESOURCE_ID_IMG_BAT_2,
+	RESOURCE_ID_IMG_BAT_3,
+	RESOURCE_ID_IMG_BAT_4,
+	RESOURCE_ID_IMG_BAT_5,
+	RESOURCE_ID_IMG_BAT_6,
+	RESOURCE_ID_IMG_BAT_7,
+	RESOURCE_ID_IMG_BAT_8,
 };
 
 GBitmap *ico_bitmap[6];
@@ -195,7 +199,9 @@ static void initialise_ui(void) {
 
 	// battery bitmap
 	box_batt = bitmap_layer_create(box_pos(4, false));
-	bitmap_layer_set_bitmap(box_batt, res_batt_90);
+	bitmap_layer_set_compositing_mode(box_batt, GCompOpSet);
+	bitmap_layer_set_background_color(box_batt, COLOR_BLUE);
+	bitmap_layer_set_bitmap(box_batt, res_batt[3]);
 	ADD(box_batt);
 	
 	// aperture logo
@@ -314,8 +320,8 @@ static void initialise_ui(void) {
 		layer_set_hidden((Layer *)ap_logo, true);
 	    layer_set_hidden((Layer *)min_dig_one, true);
 	    layer_set_hidden((Layer *)min_dig_ten, true);
-    }
-    #endif
+  }
+	#endif
 }
 
 static void handle_window_unload(Window* window) {
@@ -352,17 +358,10 @@ static void handle_window_unload(Window* window) {
 		gbitmap_destroy(res_digit[i]);
 	}
 
-	gbitmap_destroy(res_batt_10);
-	gbitmap_destroy(res_batt_20);
-	gbitmap_destroy(res_batt_30);
-	gbitmap_destroy(res_batt_40);
-	gbitmap_destroy(res_batt_50);
-	gbitmap_destroy(res_batt_60);
-	gbitmap_destroy(res_batt_70);
-	gbitmap_destroy(res_batt_80);
-	gbitmap_destroy(res_batt_90);
-	gbitmap_destroy(res_batt_100);
-	
+	for (int i=0; i<8; i++) {
+		gbitmap_destroy(res_batt[i]);
+	}
+
 	for (int i=0; i<6; i++) {
 		bitmap_layer_destroy(ico_layers[i]);
 		gbitmap_destroy(ico_bitmap[i]);
@@ -633,59 +632,43 @@ static void shuffle_icons() {
 	powerup(); // "Restart" the screen
 }
 
-static void draw_batt(int perc) {
-    if (perc <= 10) {
-        bitmap_layer_set_bitmap(box_batt, res_batt_10);
-    } else if (perc <= 20) {
-        bitmap_layer_set_bitmap(box_batt, res_batt_20);
-    } else if (perc <= 30) {
-        bitmap_layer_set_bitmap(box_batt, res_batt_30);
-    } else if (perc <= 40) {
-        bitmap_layer_set_bitmap(box_batt, res_batt_40);
-    } else if (perc <= 50) {
-        bitmap_layer_set_bitmap(box_batt, res_batt_50);
-    } else if (perc <= 60) {
-        bitmap_layer_set_bitmap(box_batt, res_batt_60);
-    } else if (perc <= 70) {
-        bitmap_layer_set_bitmap(box_batt, res_batt_70);
-    } else if (perc <= 80) {
-        bitmap_layer_set_bitmap(box_batt, res_batt_80);
-    } else if (perc <= 90) {
-        bitmap_layer_set_bitmap(box_batt, res_batt_90);
-    } else if (perc <= 110) {
-		bitmap_layer_set_bitmap(box_batt, res_batt_100);
-	}
-}
-
 static void shake_handler(AccelAxisType axis, int32_t dir) {
 	// On shakes, shuffle the icons.
 	shuffle_icons();
 }
 
 static void battery_update(BatteryChargeState state) {
-	// If charging, flash to the next percent icon if needed
-	if (state.is_plugged || state.is_charging) {
+	// We have 0-8 wedges, evenly spread that.
+	// We want the crossover point to happen in-between the wedges, so
+	// Calculate (charge / 100 + 1/16) // 8 -> *= 400/400
+	// = ( 4 * charge + 25 ) / 50;
+	int wedge = (state.charge_percent * 4 + 25) / 50;
+	if (wedge > 8) { // Shouldn't happen, just in case
+		wedge = 8;
+	}
+
+	// If charging, flash between icons.
+	if (state.is_charging) {
 		time_t temp = time(NULL);
 		struct tm *cur_time = localtime(&temp);
 		if (cur_time -> tm_sec % 2 == 0) {
-			draw_batt(state.charge_percent + 10);
-		} else {
-			draw_batt(state.charge_percent);
+			// Special case - if we're showing 8 wedges, oscillate down to 7.
+			wedge = (wedge == 8) ? 7 : wedge + 1;
 		}
-	} else {
-		draw_batt(state.charge_percent);
 	}
-	
+
+	bitmap_layer_set_background_color(box_batt, state.is_plugged ? COLOR_ORAN : COLOR_BLUE);
+	bitmap_layer_set_bitmap(box_batt, res_batt[wedge]);
+
 	if (state.charge_percent == 100) {
-		bitmap_layer_set_bitmap(box_batt, res_batt_100);
 		// Only trigger vibration if we just switched states.
 		if (!charge_vibe_done) {
 			vibes_double_pulse();
-			charge_vibe_done = 1;
+			charge_vibe_done = true;
 		}
 	} else
 		{
-		charge_vibe_done = 0;
+		charge_vibe_done = false;
 	}
 }
 
@@ -733,7 +716,7 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 	if ((units_changed & SECOND_UNIT) != 0) {
 		layer_mark_dirty(secs_layer);
 		BatteryChargeState st = battery_state_service_peek();
-		if (st.is_plugged || st.is_charging) {
+		if (st.is_charging) {
 			battery_update(st);
 		}
 	}
@@ -774,22 +757,16 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 static void init() {
 	res_bluetooth_on = gbitmap_create_with_resource(RESOURCE_ID_IMG_BLUE_ON);
 	res_bluetooth_off = gbitmap_create_with_resource(RESOURCE_ID_IMG_BLUE_OFF);
-	
+
 	res_ap_logo = gbitmap_create_with_resource(RESOURCE_ID_IMG_AP_LOGO);
-	
+
 	res_am = gbitmap_create_with_resource(RESOURCE_ID_TS_ICO_AM);
 	res_pm = gbitmap_create_with_resource(RESOURCE_ID_TS_ICO_PM);
-	
-	res_batt_10  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_1);
-	res_batt_20  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_2);
-	res_batt_30  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_3);
-	res_batt_40  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_4);
-	res_batt_50  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_5);
-	res_batt_60  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_6);
-	res_batt_70  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_7);
-	res_batt_80  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_8);
-	res_batt_90  = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_9);
-	res_batt_100 = gbitmap_create_with_resource(RESOURCE_ID_IMG_BAT_10);
+
+	res_batt[0] = gbitmap_create_blank(GSize(24, 24), GBitmapFormat8Bit);
+	for (int i=0; i<8; i++) {
+		res_batt[i + 1] = gbitmap_create_with_resource(RES_BATT_IDS[i]);
+	}
 
 	for (int i=0; i<10; i++) {
 		res_digit[i] = gbitmap_create_with_resource(RES_DIGIT_IDS[i]);
@@ -803,40 +780,40 @@ static void init() {
 int main() {
 	srand(time(NULL));
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Starting up");
-	
+
 	init();
-	
+
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "initialised");
 	show_main_window();
-	
+
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Shown window");
-	
+
 	// Get a tm structure
 	time_t temp = time(NULL); 
 	struct tm *cur_time = localtime(&temp);
-	
+
 	// Run these the first time
 	time_handler(cur_time, SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT | DAY_UNIT);
 	bluetooth_check(bluetooth_connection_service_peek());
 	battery_update(battery_state_service_peek());
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Done checks");
-	
+
 	tick_timer_service_subscribe(SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT | DAY_UNIT, time_handler);
-	
+
 	battery_state_service_subscribe(battery_update);
 	bluetooth_connection_service_subscribe(bluetooth_check);
 	accel_tap_service_subscribe(shake_handler);
-	
+
 	shuffle_icons(); // also starts the powerup animation
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Shuffled icons");
-	
+
 	app_event_loop();
-	
+
 	tick_timer_service_unsubscribe();
 	battery_state_service_unsubscribe();
 	bluetooth_connection_service_unsubscribe();
 	accel_tap_service_unsubscribe();
-	
+
 	return 0;
 }
 
