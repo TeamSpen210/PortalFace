@@ -62,6 +62,7 @@ const int HALF_WIDTH = PBL_DISPLAY_WIDTH / 2;
 const int HALF_HEIGHT = PBL_DISPLAY_HEIGHT / 2;
 
 const int MIN_PADDING = 6; // Distance beween minute digits
+const int ICON_ROUND_OFFSET = 48; // Distance from center to put icons
 const int SECONDS_RADIAL_WIDTH = 16; // Length of seconds lines on round display
 const int SECONDS_OUTER_PADDING = 6; // Distance from edge
 const int SECONDS_RADIAL_COUNT = 120 ; // Number of radial seconds lines
@@ -122,7 +123,7 @@ GRect box_pos(int off, bool second_row) {
 	// If second_row is true, it's the right/bottom row.
 	return GRect(
 	#ifdef PBL_ROUND
-		(second_row) ? HALF_WIDTH+42+24 : HALF_WIDTH-42-24, 
+		(second_row) ? HALF_WIDTH + ICON_ROUND_OFFSET : HALF_WIDTH - ICON_ROUND_OFFSET - 24, 
 		(PBL_DISPLAY_HEIGHT - 5*26)/2 + (off) * 26,
 	#else
 		35 + (off)*26,
