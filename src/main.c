@@ -59,14 +59,17 @@ static bool g_screen_is_obstructed = false;
 // During powerup, play an animation of the seconds bar increasing to the value.
 static int max_seconds_bar = 120;
 
-const int MIN_PADDING = 4; // Distance beween minute digits
-const int SECONDS_RADIAL_WIDTH = 10; // Length of seconds lines on round display
-const int SECONDS_OUTER_PADDING = 4; // Distance from edge
+const int HALF_WIDTH = PBL_DISPLAY_WIDTH / 2;
+const int HALF_HEIGHT = PBL_DISPLAY_HEIGHT / 2;
+
+const int MIN_PADDING = 6; // Distance beween minute digits
+const int SECONDS_RADIAL_WIDTH = 16; // Length of seconds lines on round display
+const int SECONDS_OUTER_PADDING = 6; // Distance from edge
 const int SECONDS_RADIAL_COUNT = 120 ; // Number of radial seconds lines
-const int SECONDS_INNER_PADDING = 4; // Distance between inner line and seconds bar ring
+const int SECONDS_INNER_PADDING = 5; // Distance between inner line and seconds bar ring
 
 // Distance the round logo and hour text are inset from the top and bottom
-const int ROUND_VERT_INSET = 24;
+const int ROUND_VERT_INSET = 35;
 	
 int ICO_IDS[] = {
 	RESOURCE_ID_TS_ICO_1,
@@ -120,13 +123,13 @@ GRect box_pos(int off, bool second_row) {
 	// If second_row is true, it's the right/bottom row.
 	return GRect(
 	#ifdef PBL_ROUND
-		(second_row) ? 80+28+16 : 80-28-16, 
-		(180 - 5*18)/2 + (off) * 18,
+		(second_row) ? HALF_WIDTH+42+24 : HALF_WIDTH-42-24, 
+		(PBL_DISPLAY_HEIGHT - 5*26)/2 + (off) * 26,
 	#else
-		27 + (off)*18,
-		110 + ((second_row) ? 18: 0),
+		35 + (off)*26,
+		142 + ((second_row) ? 26: 0),
 	#endif
-	16, 16);
+	24, 24);
 }
 
 static void initialise_ui(void) {
@@ -139,22 +142,22 @@ static void initialise_ui(void) {
 	
 	
 	#if defined(PBL_RECT) // On rectangular displays, offset upwards
-		min_dig_ten = bitmap_layer_create(GRect(71 - 32 - MIN_PADDING/2, 5, 32, 80));
-		min_dig_one = bitmap_layer_create(GRect(71 + MIN_PADDING/2, 5, 32, 80));
+		min_dig_ten = bitmap_layer_create(GRect(HALF_WIDTH - 40 - MIN_PADDING/2, 3, 40, 110));
+		min_dig_one = bitmap_layer_create(GRect(HALF_WIDTH + MIN_PADDING/2, 3, 40, 110));
 	#elif defined(PBL_ROUND) // Round displays center the icons
-		GRect min_pos = (GRect){.size = GSize(64 + MIN_PADDING, 80)};
+		GRect min_pos = (GRect){.size = GSize(80 + MIN_PADDING, 110)};
 		grect_align(&min_pos, &bounds, GAlignCenter, false);
 		
 		// minute tens digit
 		min_dig_ten = bitmap_layer_create(grect_inset(
 			min_pos, 
-			GEdgeInsets(0, MIN_PADDING/2 + 32, 0, -MIN_PADDING/2)
+			GEdgeInsets(0, MIN_PADDING/2 + 40, 0, -MIN_PADDING/2)
 		));
 
 		// minte ones digit
 		min_dig_one = bitmap_layer_create(grect_inset(
 			min_pos, 
-			GEdgeInsets(0, -MIN_PADDING/2, 0, MIN_PADDING/2 + 32)
+			GEdgeInsets(0, -MIN_PADDING/2, 0, MIN_PADDING/2 + 40)
 		));
 	#endif
 	
@@ -175,7 +178,7 @@ static void initialise_ui(void) {
 
 	// seconds bar layer. On rect displays it's constrained, but it covers everything on round.
 	#ifdef PBL_RECT
-		secs_layer = layer_create(GRect(10, 89, 123, 8));
+		secs_layer = layer_create(GRect(15, 121, 170, 12));
 	#else
 		secs_layer = layer_create(grect_inset(
 			bounds, 
@@ -198,9 +201,9 @@ static void initialise_ui(void) {
 	// aperture logo
 	// On round displays it's just the aperture, and bottom-centered
 	#ifdef PBL_RECT
-		ap_logo = bitmap_layer_create(GRect(10, 150, 65, 16));
+		ap_logo = bitmap_layer_create(GRect(6, 200, 96, 24));
 	#else
-		GRect ap_logo_pos = (GRect){.size = GSize(16, 16)};
+		GRect ap_logo_pos = (GRect){.size = GSize(24, 24)};
 		grect_align(&ap_logo_pos, &bounds, GAlignBottom, false);
 		ap_logo = bitmap_layer_create(grect_inset(
 			ap_logo_pos,
@@ -213,12 +216,13 @@ static void initialise_ui(void) {
 
 	// weekday textbox
 	GRect box_date_pos = box_pos(1, false);
-	box_date_pos.origin.y -= 1; // It's not aligned perfectly, we need to adjust slightly.
+	// It's not aligned perfectly, we need to adjust slightly.
+	box_date_pos.origin.y -= 5;
 	box_date = text_layer_create(box_date_pos);
 	text_layer_set_background_color(box_date, GColorWhite);
 	text_layer_set_text_color(box_date, GColorBlack);
 	text_layer_set_text_alignment(box_date, GTextAlignmentCenter);
-	text_layer_set_font(box_date, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+	text_layer_set_font(box_date, fonts_get_system_font(FONT_KEY_GOTHIC_24));
 	ADD(box_date);
 	
 	// am/pm bitmap
@@ -228,7 +232,7 @@ static void initialise_ui(void) {
 	
 	// seconds line
 	#if defined(PBL_RECT)
-		secs_line = layer_create(GRect(10, 85, 123, 1));
+		secs_line = layer_create(GRect(14, 115, 170, 2));
 	#elif defined(PBL_ROUND)
 		// On round watches, it's positioned inside the seconds ring.
 		// We need to inset the width of the seconds ring, plus our paddings.
@@ -240,10 +244,10 @@ static void initialise_ui(void) {
 	
 	// hour text
 	#if defined(PBL_RECT)
-		hour_text = text_layer_create(GRect(8, 68, 32, 15));
+		hour_text = text_layer_create(GRect(14, 92, 40, 20));
 	#elif defined(PBL_ROUND)
 		// This is positioned opposite to the aperture logo
-		GRect hour_pos = (GRect){.size = GSize(32, 15)};
+		GRect hour_pos = (GRect){.size = GSize(60, 28)};
 		grect_align(&hour_pos, &bounds, GAlignTop, false);
 		hour_text = text_layer_create(grect_inset(
 			hour_pos,
@@ -258,13 +262,16 @@ static void initialise_ui(void) {
 		GTextAlignmentCenter,
 		GTextAlignmentRight
 		));
-	text_layer_set_font(hour_text, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+	text_layer_set_font(hour_text, fonts_get_system_font(PBL_IF_ROUND_ELSE(
+		FONT_KEY_GOTHIC_24,
+		FONT_KEY_GOTHIC_18
+	)));
 	ADD(hour_text);	
 	
 	
 	// Icon line - we only use 1 on round watches
 	#ifndef PBL_ROUND
-	icon_line = layer_create(GRect(10, 105, 123, 1));
+	icon_line = layer_create(GRect(14, 115, 170, 2));
 	ADD(icon_line);
 	#endif
 	
@@ -272,7 +279,7 @@ static void initialise_ui(void) {
 	#ifdef PBL_ROUND
 		GRect first_rect = box_pos(0, false);
 		GRect last_rect = box_pos(4, true);
-		// The round icon backround needs to be the bounding box for each position, + 1 on each side.
+		// The round icon background needs to be the bounding box for each position, + 1 on each side.
 		icon_bg = layer_create(GRect(
 				first_rect.origin.x - 1, 
 				first_rect.origin.y - 1, 
@@ -280,7 +287,7 @@ static void initialise_ui(void) {
 			    last_rect.origin.y+last_rect.size.h - first_rect.origin.y + 2
 			));
 	#else
-		icon_bg = layer_create(GRect(10, 109, 123, 40));
+		icon_bg = layer_create(GRect(32, 141, 170, 56));
 	#endif
 		ADD(icon_bg);
 	
@@ -493,8 +500,8 @@ static void draw_sep_line(struct Layer *layer, GContext *ctx) {
 		(bounds.size.w + bounds.size.h) / 4
 	);
 	#else
-	// Draw the line that sepaarates seconds from the boxes or the testchamber number.
-	graphics_draw_line(ctx, GPoint(0,0), GPoint(122, 0));
+	// Draw the line that separates seconds from the boxes or the testchamber number.
+	graphics_draw_line(ctx, GPoint(0,0), GPoint(170, 0));
 	#endif
 }
 
@@ -507,16 +514,17 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	
 #if defined(PBL_RECT) // Bar-graph display
 	// In powerup mode, limit to max_seconds_bar size at most.
-	#ifdef PBL_COLOR
-	// On color Pebbles, draw 'off' bars in grey
-	for (int i = 2; i <= 60 * 2; i += 2) {
-		if ((cur_time -> tm_sec * 2) + 2 == i || i == max_seconds_bar * 2 + 2) {
+	int sec_count = cur_time -> tm_sec;
+	if ( max_seconds_bar < sec_count )
+		sec_count = max_seconds_bar;
+	int sec_pos = sec_count * 170 / 60;
+	sec_pos -= sec_pos % 2;
+
+	for (int i = 2; i <= 170; i += 2) {
+		if ( i == sec_pos ) {
 			graphics_context_set_stroke_color(ctx, GColorLightGray);
 		}
-	#else
-	for (int i = 2; (i <= cur_time->tm_sec * 2 && i <= max_seconds_bar * 2); i += 2) {
-	#endif
-		graphics_draw_line(ctx, GPoint(i, 0), GPoint(i, 8));
+		graphics_draw_line(ctx, GPoint(i, 0), GPoint(i, 12));
 	}
 #elif defined(PBL_ROUND) // Radial
 	GRect bounds = layer_get_bounds(layer);
@@ -547,17 +555,17 @@ static void draw_icon_bg(struct Layer *layer, GContext *ctx) {
 	#if defined(PBL_RECT)
 	for (int x = 0; x <= 4; x += 1) {
 		for (int y = 0; y <= 1; y += 1) {
-			graphics_draw_rect(ctx, GRect(x*18 + 16, y*18, 18, 18));
+			graphics_draw_rect(ctx, GRect(x*26 + 2, y*26, 26, 26));
 		}
 	}
 	#elif defined(PBL_ROUND)
 	GRect bounds = layer_get_bounds(layer);
-	int right_offset = bounds.size.w - 18;
+	int right_offset = bounds.size.w - 26;
 	for (int y = 0; y <= 4; y += 1) {
 		// Left
-		graphics_draw_rect(ctx, GRect(0, 18*y, 18, 18));
+		graphics_draw_rect(ctx, GRect(0, 26*y, 26, 26));
 		// Right
-		graphics_draw_rect(ctx, GRect(right_offset, 18*y, 18, 18));
+		graphics_draw_rect(ctx, GRect(right_offset, 26*y, 26, 26));
 	}
 	#endif
 }
