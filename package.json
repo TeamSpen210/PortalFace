@@ -110,6 +110,11 @@
         },
         {
           "type": "png",
+          "name": "IMG_QUIET_TIME",
+          "file": "images/ico_quiet_time.png"
+        },
+        {
+          "type": "png",
           "name": "IMG_BAT_1",
           "file": "images/battery/aper_1.png",
           "targetPlatforms": ["emery", "gabbro"]

@@ -6,6 +6,7 @@ static Window *main_win;
 static BitmapLayer *box_blue;
 static BitmapLayer *box_batt;
 static BitmapLayer *box_apm;
+static BitmapLayer *box_quiet_time;
 static TextLayer *box_date;
 static TextLayer *hour_text;
 
@@ -43,6 +44,7 @@ const GColor COLOR_ORAN = GColorChromeYellow;
 
 static GBitmap *res_bluetooth_on;
 static GBitmap *res_bluetooth_off; 
+static GBitmap *res_quiet_time;
 
 static GBitmap *res_ap_logo;
 
@@ -65,6 +67,8 @@ const int SECONDS_INNER_PADDING = 5; // Distance between inner line and seconds 
 
 // Distance the round logo and hour text are inset from the top and bottom
 const int ROUND_VERT_INSET = 35;
+
+#define ARRAY_SIZE(x) (int)(sizeof(x) / sizeof(x[0]))
 	
 int ICO_IDS[] = {
 	RESOURCE_ID_TS_ICO_1,
@@ -120,9 +124,11 @@ const int RES_BATT_IDS[] = {
 	RESOURCE_ID_IMG_BAT_8,
 };
 
-GBitmap *ico_bitmap[6];
+GBitmap *ico_bitmap[26];
 
-BitmapLayer *ico_layers[6];
+BitmapLayer *ico_layers[5];
+
+static void quiet_time_update();
 
 GRect box_pos(int off, bool second_row) {
 	// Return the rect matching a specific box position.
@@ -300,16 +306,14 @@ static void initialise_ui(void) {
 		ADD(icon_bg);
 	
 	// Init all the bitmap icons
-	for (int i=0; i<6; i++) {
-		if (i==5) {
-			// This one is in a different position
-			ico_layers[i] = bitmap_layer_create(box_pos(2, false));
-		} else {
-			ico_layers[i] = bitmap_layer_create(box_pos(i, true));
-		}
+	for (int i=0; i<ARRAY_SIZE(ico_layers); i++) {
+		ico_layers[i] = bitmap_layer_create(box_pos(i, true));
 		bitmap_layer_set_bitmap(ico_layers[i], ico_bitmap[i]);
 		ADD(ico_layers[i]);
 	}
+	box_quiet_time = bitmap_layer_create(box_pos(2, false));
+	bitmap_layer_set_bitmap(box_quiet_time, ico_bitmap[5]);
+	ADD(box_quiet_time);
 	
 	#ifdef PBL_RECT
 	if(!grect_equal(&unobstucted_bounds, &bounds)) {
@@ -322,7 +326,7 @@ static void initialise_ui(void) {
 		layer_set_hidden((Layer *)ap_logo, true);
 	    layer_set_hidden((Layer *)min_dig_one, true);
 	    layer_set_hidden((Layer *)min_dig_ten, true);
-  }
+	}
 	#endif
 }
 
@@ -350,22 +354,25 @@ static void handle_window_unload(Window* window) {
 
 	gbitmap_destroy(res_bluetooth_on);
 	gbitmap_destroy(res_bluetooth_off);
+	gbitmap_destroy(res_quiet_time);
 	
 	gbitmap_destroy(res_ap_logo);
 	
 	gbitmap_destroy(res_am);
 	gbitmap_destroy(res_pm);
 
-	for (int i=0; i<10; i++) {
+	for (int i=0; i<ARRAY_SIZE(res_digit); i++) {
 		gbitmap_destroy(res_digit[i]);
 	}
 
-	for (int i=0; i<8; i++) {
+	for (int i=0; i<ARRAY_SIZE(res_batt); i++) {
 		gbitmap_destroy(res_batt[i]);
 	}
 
-	for (int i=0; i<6; i++) {
+	for (int i=0; i<ARRAY_SIZE(ico_layers); i++) {
 		bitmap_layer_destroy(ico_layers[i]);
+	}
+	for (int i=0; i<ARRAY_SIZE(ico_bitmap); i++) {
 		gbitmap_destroy(ico_bitmap[i]);
 	}
 }
@@ -385,6 +392,7 @@ void powerdown() {
 	HIDE(box_batt);
 	HIDE(box_apm);
 	HIDE(box_date);
+	HIDE(box_quiet_time);
 	
 	HIDE(secs_layer);
 	HIDE(secs_line);
@@ -394,7 +402,7 @@ void powerdown() {
 	HIDE(min_dig_one);
 
 	HIDE(ap_logo);
-	for (int i=0; i<6; i++) {
+	for (int i=0; i<ARRAY_SIZE(ico_layers); i++) {
 		HIDE(ico_layers[i]);
 	}
 }
@@ -432,7 +440,8 @@ void powerup_boxes(void *val) {
 	SHOW(box_batt);
 	SHOW(box_apm);
 	SHOW(box_date);
-	for (int i=0; i<6; i++) {
+	SHOW(box_quiet_time);
+	for (int i=0; i<ARRAY_SIZE(ico_layers); i++) {
 		SHOW(ico_layers[i]);
 	}
 }
@@ -521,7 +530,7 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	
 #if defined(PBL_RECT) // Bar-graph display
 	// In powerup mode, limit to max_seconds_bar size at most.
-	int sec_count = cur_time -> tm_sec;
+	int sec_count = cur_time->tm_sec;
 	if ( max_seconds_bar < sec_count )
 		sec_count = max_seconds_bar;
 	int sec_pos = sec_count * 170 / 60;
@@ -581,6 +590,11 @@ static void unobstructed_start(GRect final_area, void *context);
 static void unobstructed_anim(AnimationProgress progress, void *context);
 static void unobstructed_end(void *context);
 
+
+static void handle_window_return(Window * window) {
+	quiet_time_update();
+}
+
 void show_main_window() {
 	initialise_ui();
 	
@@ -593,6 +607,7 @@ void show_main_window() {
   
 	window_set_window_handlers(main_win, (WindowHandlers) {
 		.unload = handle_window_unload,
+		.appear = handle_window_return,
 	});
 	layer_set_update_proc(secs_layer, &draw_seconds);
 	layer_set_update_proc(secs_line, &draw_sep_line);
@@ -624,19 +639,19 @@ static void display_num(char num, BitmapLayer *bitmap) {
 
 static void shuffle_icons(bool force_backlight) {
 	// Rearrange the icon array and apply it to the display.
-	int i, j, tmp;
+	int i, j;
+	GBitmap *tmp;
 	for (i=(NUM_ICONS-1); i>0; i--){
 		j = rand() % (i+1);
-		tmp = ICO_IDS[i];
-		ICO_IDS[i] = ICO_IDS[j];
-		ICO_IDS[j] = tmp;
+		tmp = ico_bitmap[i];
+		ico_bitmap[i] = ico_bitmap[j];
+		ico_bitmap[j] = tmp;
 	}
 	
-	for (i=0; i<6; i++) {
-		gbitmap_destroy(ico_bitmap[i]);
-		ico_bitmap[i] =  gbitmap_create_with_resource(ICO_IDS[i]);
+	for (i=0; i<ARRAY_SIZE(ico_layers); i++) {
 		bitmap_layer_set_bitmap(ico_layers[i], ico_bitmap[i]);
 	}
+	quiet_time_update(); // This uses icon number 5 if disabled.
 	powerup(force_backlight); // "Restart" the screen
 }
 
@@ -677,6 +692,14 @@ static void battery_update(BatteryChargeState state) {
 	} else
 		{
 		charge_vibe_done = false;
+	}
+}
+
+static void quiet_time_update() {
+	if ( quiet_time_is_active() ) {
+		bitmap_layer_set_bitmap( box_quiet_time, res_quiet_time );
+	} else {
+		bitmap_layer_set_bitmap( box_quiet_time, ico_bitmap[5] );
 	}
 }
 
@@ -728,37 +751,39 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 			battery_update(st);
 		}
 	}
-	
+
 	if ((units_changed & MINUTE_UNIT) != 0) {
-		char min_char[] = "0000";
+		static char min_char[] = "00";
 		strftime(min_char, sizeof("--"), "%M", tick_time);
 		display_num(min_char[0], min_dig_ten);
 		display_num(min_char[1], min_dig_one);
 	}
-	
+
 	if ((units_changed & DAY_UNIT) != 0) {
 		static char date_char[] = "22";
 		strftime(date_char, sizeof("--"), "%d", tick_time);
 		text_layer_set_text(box_date, date_char);
 	}
-	
+
 	if ((units_changed & HOUR_UNIT) !=0) {
 		shuffle_icons(false);
-		
+
 		static char hour_char[] = "00/19";
 		if (clock_is_24h_style()) {
+			// Reconstructing test track chamber count
 			strftime(hour_char, sizeof("-----"), "%H/34", tick_time);
 		} else {
+			// Portal 1 chamber count
 			strftime(hour_char, sizeof("-----"), "%I/19", tick_time);
 		}
 		text_layer_set_text(hour_text, hour_char);
-		
+
 		if ((tick_time -> tm_hour) < 12) {
 			bitmap_layer_set_bitmap(box_apm, res_am);
 		} else {
 			bitmap_layer_set_bitmap(box_apm, res_pm);
 		}
-		
+
 	}
 }
 
@@ -766,21 +791,22 @@ static void init() {
 	res_bluetooth_on = gbitmap_create_with_resource(RESOURCE_ID_IMG_BLUE_ON);
 	res_bluetooth_off = gbitmap_create_with_resource(RESOURCE_ID_IMG_BLUE_OFF);
 
+	res_quiet_time = gbitmap_create_with_resource(RESOURCE_ID_IMG_QUIET_TIME);
 	res_ap_logo = gbitmap_create_with_resource(RESOURCE_ID_IMG_AP_LOGO);
 
 	res_am = gbitmap_create_with_resource(RESOURCE_ID_TS_ICO_AM);
 	res_pm = gbitmap_create_with_resource(RESOURCE_ID_TS_ICO_PM);
 
 	res_batt[0] = gbitmap_create_blank(GSize(24, 24), GBitmapFormat8Bit);
-	for (int i=0; i<8; i++) {
-		res_batt[i + 1] = gbitmap_create_with_resource(RES_BATT_IDS[i]);
+	for (int i=1; i<ARRAY_SIZE(res_batt); i++) {
+		res_batt[i] = gbitmap_create_with_resource(RES_BATT_IDS[i - 1]);
 	}
 
-	for (int i=0; i<10; i++) {
+	for (int i=0; i<ARRAY_SIZE(res_digit); i++) {
 		res_digit[i] = gbitmap_create_with_resource(RES_DIGIT_IDS[i]);
 	}
 	
-	for (int i=0; i<6; i++) {
+	for (int i=0; i<ARRAY_SIZE(ico_bitmap); i++) {
 		ico_bitmap[i] = gbitmap_create_with_resource(ICO_IDS[i]);
 	}
 }
