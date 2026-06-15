@@ -1,6 +1,5 @@
 #include <pebble.h>
 #if defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_CHALK) || defined(PBL_PLATFORM_DIORITE)
-#else
 	
 static Window *main_win;
 static BitmapLayer *box_blue;
@@ -836,5 +835,6 @@ int main() {
 	
 	return 0;
 }
+
 
 #endif // defined(platforms)
