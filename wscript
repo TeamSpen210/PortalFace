@@ -32,6 +32,16 @@ def build(ctx):
     cached_env = ctx.env
     for platform in ctx.env.TARGET_PLATFORMS:
         ctx.env = ctx.all_envs[platform]
+
+        # Figure out the display width.
+        for define in ctx.env['DEFINES']:
+            if define.startswith('PBL_DISPLAY_WIDTH='):
+                display_width = int(define.removeprefix('PBL_DISPLAY_WIDTH='))
+                break
+        else:
+            raise KeyError(f"No display width for {platform=}! vars={list(ctx.env['DEFINES'])}")
+        ctx.env['DEFINES'].append('TSPEN_DISPLAY_HIGHRES' if display_width >= 200 else 'TSPEN_DISPLAY_LOWRES')
+
         ctx.set_group(ctx.env.PLATFORM_NAME)
         app_elf = '{}/pebble-app.elf'.format(ctx.env.BUILD_DIR)
         ctx.pbl_build(source=ctx.path.ant_glob('src/**/*.c'), target=app_elf, bin_type='app')

@@ -1,5 +1,5 @@
 #include <pebble.h>
-#if defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_CHALK) || defined(PBL_PLATFORM_DIORITE)
+#ifdef TSPEN_DISPLAY_LOWRES
 	
 static Window *main_win;
 static BitmapLayer *box_blue;
@@ -837,4 +837,4 @@ int main() {
 }
 
 
-#endif // defined(platforms)
+#endif // defined(TSPEN_DISPLAY_LOWRES)
