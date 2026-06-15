@@ -597,11 +597,11 @@ static void handle_window_return(Window * window) {
 void show_main_window() {
 	initialise_ui();
 	
-    static UnobstructedAreaHandlers handlers = {
-        .will_change = &unobstructed_start,
-        .change = &unobstructed_anim,
-        .did_change = &unobstructed_end
-    };
+  UnobstructedAreaHandlers handlers = {
+    .will_change = &unobstructed_start,
+    .change = &unobstructed_anim,
+    .did_change = &unobstructed_end
+  };
 	unobstructed_area_service_subscribe(handlers, NULL);
   
 	window_set_window_handlers(main_win, (WindowHandlers) {

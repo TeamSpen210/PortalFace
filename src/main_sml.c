@@ -53,7 +53,6 @@ static GBitmap *res_ap_logo;
 
 static bool charge_vibe_done = 1;
 static bool bluetooth_vibe_done = 1;
-static bool g_screen_is_obstructed = false;
 
 // During powerup, play an animation of the seconds bar increasing to the value.
 static int max_seconds_bar = 120;
@@ -568,11 +567,11 @@ static void unobstructed_end(void *context);
 void show_main_window() {
 	initialise_ui();
 	
-    static UnobstructedAreaHandlers handlers = {
-        .will_change = &unobstructed_start,
-        .change = &unobstructed_anim,
-        .did_change = &unobstructed_end
-    };
+  UnobstructedAreaHandlers handlers = {
+      .will_change = &unobstructed_start,
+      .change = &unobstructed_anim,
+      .did_change = &unobstructed_end
+  };
 	unobstructed_area_service_subscribe(handlers, NULL);
   
 	window_set_window_handlers(main_win, (WindowHandlers) {
