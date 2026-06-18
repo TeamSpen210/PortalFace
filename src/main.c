@@ -51,6 +51,11 @@ static bool charge_vibe_done = true;
 // Whether the powerup sequence triggered the user light.
 static bool powerup_light_enabled = false;
 
+// If user is detected sleeping, suppress seconds animation.
+#ifdef PBL_HEALTH
+static bool sleep_mode = false;
+#endif
+
 // During powerup, play an animation of the seconds bar increasing to the value.
 static int max_seconds_bar = 120;
 
@@ -128,6 +133,8 @@ GBitmap *ico_bitmap[26];
 BitmapLayer *ico_layers[5];
 
 static void quiet_time_update();
+static void sleep_update();
+static void time_handler(struct tm *tick_time, TimeUnits units_changed);
 
 GRect box_pos(int off, bool second_row) {
 	// Return the rect matching a specific box position.
@@ -149,7 +156,6 @@ static void initialise_ui(void) {
 	root_layer = window_get_root_layer(main_win);
 	
 	GRect bounds = layer_get_bounds(root_layer);
-	GRect unobstucted_bounds = layer_get_unobstructed_bounds(root_layer);
 	
 	
 	#if defined(PBL_RECT) // On rectangular displays, offset upwards
@@ -315,6 +321,7 @@ static void initialise_ui(void) {
 	ADD(box_quiet_time);
 	
 	#ifdef PBL_RECT
+	GRect unobstucted_bounds = layer_get_unobstructed_bounds(root_layer);
 	if(!grect_equal(&unobstucted_bounds, &bounds)) {
 	    // Force the slide-frame to be in the correct position
 	    GRect slide_frame = layer_get_frame((Layer *) slide_layer);
@@ -475,13 +482,21 @@ void powerup_done(void *val) {
 #undef HIDE
 
 static void powerup(bool force_backlight) {
+	#ifdef PBL_HEALTH
+	// If forcing backlight, kick out of sleep mode.
+	if (force_backlight) {
+		sleep_mode = false;
+		layer_set_hidden(secs_layer, false);
+	}
+	#endif
+
 	// Play the light flickering animation.
 	if (playing_powerup){
-		return; // Don't repeat
+		return; // Don't recurse
 	}
 	playing_powerup = true;
 	powerup_light_enabled = force_backlight;
-	
+
 	powerdown();  // Hide everything first
 
 	if (force_backlight) {
@@ -702,6 +717,19 @@ static void quiet_time_update() {
 	}
 }
 
+static void sleep_update() {
+#ifdef PBL_HEALTH
+		// Check if the user is sleeping, if so disable the seconds display.
+		HealthActivityMask activities = health_service_peek_current_activities();
+		bool new_sleep = (activities & (HealthActivitySleep | HealthActivityRestfulSleep)) != 0;
+		if ( sleep_mode != new_sleep ) {
+			layer_set_hidden(secs_layer, sleep_mode);
+			tick_timer_service_subscribe(HOUR_UNIT | MINUTE_UNIT | DAY_UNIT | (new_sleep ? SECOND_UNIT : 0), time_handler);
+			sleep_mode = new_sleep;
+		}
+#endif
+}
+
 // Handle animating when quickview appears / unobstructed-area
 static void unobstructed_start(GRect final_area, void *context) {
   GRect full_bounds = layer_get_bounds((Layer *)root_layer);
@@ -711,6 +739,8 @@ static void unobstructed_start(GRect final_area, void *context) {
     layer_set_hidden((Layer *)min_dig_one, true);
     layer_set_hidden((Layer *)min_dig_ten, true);
   }
+	// See if the user woke up.
+  sleep_update();
 }
 
 // Run while it's changing
@@ -730,21 +760,29 @@ static void unobstructed_end(void *context) {
     layer_set_frame((Layer *) slide_layer, slide_frame);
     layer_mark_dirty((Layer *) slide_layer);
   }
+	// See if the user woke up.
+  sleep_update();
 }
-  
+
 static void unobstructed_anim(AnimationProgress progress, void *context) {
   GRect full_bounds = layer_get_bounds((Layer *)root_layer);
   GRect bounds = layer_get_unobstructed_bounds((Layer *)root_layer);
-  
+
   GRect slide_frame = layer_get_frame((Layer *) slide_layer);
-  
+
   slide_frame.origin.y = -(full_bounds.size.h - bounds.size.w)*2;
   layer_set_frame((Layer *) slide_layer, slide_frame);
 }
 
 static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 	if ((units_changed & SECOND_UNIT) != 0) {
-		layer_mark_dirty(secs_layer);
+#ifdef PBL_HEALTH
+		if (!sleep_mode)
+#endif
+		{
+			layer_mark_dirty(secs_layer);
+		}
+
 		BatteryChargeState st = battery_state_service_peek();
 		if (st.is_charging) {
 			battery_update(st);
@@ -756,6 +794,7 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 		strftime(min_char, sizeof("--"), "%M", tick_time);
 		display_num(min_char[0], min_dig_ten);
 		display_num(min_char[1], min_dig_one);
+		sleep_update();
 	}
 
 	if ((units_changed & DAY_UNIT) != 0) {
@@ -769,7 +808,7 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 		static char hour_char[] = "00/19";
 		if (clock_is_24h_style()) {
-			// Reconstructing test track chamber count
+			// Reconstructing style test track chamber count
 			strftime(hour_char, sizeof("-----"), "%H/34", tick_time);
 		} else {
 			// Portal 1 chamber count
@@ -777,7 +816,7 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 		}
 		text_layer_set_text(hour_text, hour_char);
 
-		if ((tick_time -> tm_hour) < 12) {
+		if ((tick_time->tm_hour) < 12) {
 			bitmap_layer_set_bitmap(box_apm, res_am);
 		} else {
 			bitmap_layer_set_bitmap(box_apm, res_pm);
