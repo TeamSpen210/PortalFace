@@ -132,6 +132,20 @@ GBitmap *ico_bitmap[26];
 
 BitmapLayer *ico_layers[5];
 
+
+static BitmapLayer **all_box_layers[10] = {
+	&box_blue,
+	&box_batt,
+	&box_apm,
+	NULL, // Only one which isn't a BitmapLayer
+	&box_quiet_time,
+	&ico_layers[0],
+	&ico_layers[1],
+	&ico_layers[2],
+	&ico_layers[3],
+	&ico_layers[4],
+};
+
 static void quiet_time_update();
 static void sleep_update();
 static void time_handler(struct tm *tick_time, TimeUnits units_changed);
@@ -438,17 +452,25 @@ void powerup_nums(void *val) {
 	SHOW(min_dig_one);
 	SHOW(hour_text);
 	SHOW(icon_bg);
+	if (powerup_light_enabled) {
+		light_enable_interaction(); // Keep light on.
+	}
 }
 
-void powerup_boxes(void *val) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Boxes");
-	SHOW(box_blue);
-	SHOW(box_batt);
-	SHOW(box_apm);
+void powerup_box(void *layer) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Box");
+	SHOW(layer);
+
+	if (powerup_light_enabled) {
+		light_enable_interaction(); // Keep light on.
+	}
+}
+void powerup_date(void *) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Date Box");
 	SHOW(box_date);
-	SHOW(box_quiet_time);
-	for (int i=0; i<ARRAY_SIZE(ico_layers); i++) {
-		SHOW(ico_layers[i]);
+
+	if (powerup_light_enabled) {
+		light_enable_interaction(); // Keep light on.
 	}
 }
 
@@ -462,20 +484,33 @@ void powerup_progress_start(void *val) {
 }
 
 void powerup_progress(void *val) {
-	max_seconds_bar += PBL_IF_ROUND_ELSE(2, 4);
+	max_seconds_bar += 2;
+	if (powerup_light_enabled) {
+		light_enable_interaction(); // Keep light on.
+	}
 	layer_mark_dirty(secs_layer);
 }
 
 void powerup_done(void *val) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Complete");
-	
-	max_seconds_bar = 120;
-	
+
+	max_seconds_bar = 60;
+
 	if (powerup_light_enabled) {
-		light_enable_interaction(); // Return light to normal
-		light_enable(false);
+		light_enable_interaction();
 	}
 	playing_powerup = powerup_light_enabled = false;
+}
+
+void powerup_shuffle() {
+	int i, j;
+	BitmapLayer **tmp;
+	for (i=9; i>0; i--){
+		j = rand() % (i+1);
+		tmp = all_box_layers[i];
+		all_box_layers[i] = all_box_layers[j];
+		all_box_layers[j] = tmp;
+	}
 }
 
 #undef SHOW
@@ -486,7 +521,6 @@ static void powerup(bool force_backlight) {
 	// If forcing backlight, kick out of sleep mode.
 	if (force_backlight) {
 		sleep_mode = false;
-		layer_set_hidden(secs_layer, false);
 	}
 	#endif
 
@@ -497,11 +531,11 @@ static void powerup(bool force_backlight) {
 	playing_powerup = true;
 	powerup_light_enabled = force_backlight;
 
+	// Shuffle turnon order:
+	powerup_shuffle();
+
 	powerdown();  // Hide everything first
 
-	if (force_backlight) {
-		light_enable(true); // Keep the light on throughout the animation
-	}
 	app_timer_register( 150, &powerup_lines, NULL);
 	app_timer_register( 300, &powerup_nums, NULL);
 	app_timer_register( 400, &powerup_logo, NULL);
@@ -509,8 +543,20 @@ static void powerup(bool force_backlight) {
 	app_timer_register( 800, &powerup_logo, NULL);
 	app_timer_register( 900, &powerup_progress_start, NULL);
 	app_timer_register( 900, &powerup_nums, NULL);
-	app_timer_register(1100, &powerup_boxes, NULL);
-	
+
+	for (int i = 0; i < 10; ++i)
+	{
+		if (all_box_layers[i] == NULL)
+		{
+			app_timer_register(1100 + 10 * i, &powerup_date, NULL);
+		}
+		else
+		{
+			BitmapLayer *box = *all_box_layers[i];
+			app_timer_register(1100 + 10 * i, &powerup_box, (void *)box);
+		}
+	}
+
 	for(int i=1125; i <= 1900; i += PBL_IF_ROUND_ELSE(15, 25)) {
 		app_timer_register(i, &powerup_progress, NULL);
 	}
@@ -549,9 +595,12 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 		sec_count = max_seconds_bar;
 	int sec_pos = sec_count * 170 / 60;
 	sec_pos -= sec_pos % 2;
+	if ( sec_pos < 2) {
+		sec_pos = 2;
+	}
 
 	for (int i = 2; i <= 170; i += 2) {
-		if ( i == sec_pos ) {
+		if ( i >= sec_pos ) {
 			graphics_context_set_stroke_color(ctx, GColorLightGray);
 		}
 		graphics_draw_line(ctx, GPoint(i, 0), GPoint(i, 12));
