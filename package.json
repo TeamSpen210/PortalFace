@@ -80,6 +80,66 @@
         },
         {
           "type": "png",
+          "name": "IMG_NUM_SML_0",
+          "file": "images/numbers/num_sml_0.png",
+          "targetPlatforms": ["emery"]
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_SML_1",
+          "file": "images/numbers/num_sml_1.png",
+          "targetPlatforms": ["emery"]
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_SML_2",
+          "file": "images/numbers/num_sml_2.png",
+          "targetPlatforms": ["emery"]
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_SML_3",
+          "file": "images/numbers/num_sml_3.png",
+          "targetPlatforms": ["emery"]
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_SML_4",
+          "file": "images/numbers/num_sml_4.png",
+          "targetPlatforms": ["emery"]
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_SML_5",
+          "file": "images/numbers/num_sml_5.png",
+          "targetPlatforms": ["emery"]
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_SML_6",
+          "file": "images/numbers/num_sml_6.png",
+          "targetPlatforms": ["emery"]
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_SML_7",
+          "file": "images/numbers/num_sml_7.png",
+          "targetPlatforms": ["emery"]
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_SML_8",
+          "file": "images/numbers/num_sml_8.png",
+          "targetPlatforms": ["emery"]
+        },
+        {
+          "type": "png",
+          "name": "IMG_NUM_SML_9",
+          "file": "images/numbers/num_sml_9.png",
+          "targetPlatforms": ["emery"]
+        },
+        {
+          "type": "png",
           "name": "IMG_AP_LOGO",
           "file": "images/logo_aperture.png",
           "targetPlatforms": ["emery", "gabbro"]

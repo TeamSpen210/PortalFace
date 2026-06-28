@@ -1,6 +1,10 @@
 #include <pebble.h>
 #ifdef TSPEN_DISPLAY_HIGHRES
 
+#ifdef PBL_RECT
+#define HAS_OBSTRUCTION
+#endif
+
 static Window *main_win;
 static BitmapLayer *box_blue;
 static BitmapLayer *box_batt;
@@ -11,8 +15,14 @@ static TextLayer *hour_text;
 
 // Main window layer
 static Layer *root_layer;
+
+#ifdef HAS_OBSTRUCTION
 // Slides up for quickview...
 static Layer *slide_layer;
+static bool is_obstructed = false;
+#else // Always untrue.
+	#define is_obstructed false
+#endif
 
 // The moving bars
 static Layer *secs_layer;
@@ -25,16 +35,22 @@ static Layer *icon_line; // There's only one on round displays
 // The backround for icons
 static Layer *icon_bg;
 
-// Minute digits
-static BitmapLayer *min_dig_ten;
-static BitmapLayer *min_dig_one;
 
 static BitmapLayer *ap_logo;
 
 static GBitmap *res_am;
 static GBitmap *res_pm;
 
+// Minute digits
+static BitmapLayer *min_dig_ten;
+static BitmapLayer *min_dig_one;
 static GBitmap *res_digit[10];
+
+#ifdef HAS_OBSTRUCTION
+static GBitmap *res_digit_sml[10];
+static BitmapLayer *min_dig_sml_ten;
+static BitmapLayer *min_dig_sml_one;
+#endif
 
 static GBitmap *res_batt[9];
 
@@ -50,9 +66,6 @@ static GBitmap *res_ap_logo;
 static bool charge_vibe_done = true;
 // Whether the powerup sequence triggered the user light.
 static bool powerup_light_enabled = false;
-#ifdef PBL_RECT
-static bool is_obstructed = false;
-#endif
 
 // If user is detected sleeping, suppress seconds animation.
 #ifdef PBL_HEALTH
@@ -120,6 +133,21 @@ const int RES_DIGIT_IDS[] = {
 	RESOURCE_ID_IMG_NUM_9,
 };
 
+#ifdef HAS_OBSTRUCTION
+const int RES_DIGIT_SML_IDS[] = {
+	RESOURCE_ID_IMG_NUM_SML_0,
+	RESOURCE_ID_IMG_NUM_SML_1,
+	RESOURCE_ID_IMG_NUM_SML_2,
+	RESOURCE_ID_IMG_NUM_SML_3,
+	RESOURCE_ID_IMG_NUM_SML_4,
+	RESOURCE_ID_IMG_NUM_SML_5,
+	RESOURCE_ID_IMG_NUM_SML_6,
+	RESOURCE_ID_IMG_NUM_SML_7,
+	RESOURCE_ID_IMG_NUM_SML_8,
+	RESOURCE_ID_IMG_NUM_SML_9,
+};
+#endif
+
 const int RES_BATT_IDS[] = {
 	RESOURCE_ID_IMG_BAT_1,
 	RESOURCE_ID_IMG_BAT_2,
@@ -152,6 +180,16 @@ static BitmapLayer **all_box_layers[10] = {
 static void quiet_time_update();
 static void sleep_update();
 static void time_handler(struct tm *tick_time, TimeUnits units_changed);
+#ifdef HAS_OBSTRUCTION
+static void unobstructed_set_vis(bool obstructed);
+#endif
+
+int max(int a, int b) {
+	return a > b ? a : b;
+}
+int min(int a, int b) {
+	return a < b ? a : b;
+}
 
 GRect box_pos(int off, bool second_row) {
 	// Return the rect matching a specific box position.
@@ -200,10 +238,16 @@ static void initialise_ui(void) {
 	layer_add_child(root_layer, (Layer *)min_dig_one);
 	
 	
-	#ifdef PBL_RECT
-		
+	#ifdef HAS_OBSTRUCTION
+
 		slide_layer = layer_create(bounds);
 		layer_add_child(root_layer, (Layer *)slide_layer);
+
+		min_dig_sml_ten = bitmap_layer_create(GRect(HALF_WIDTH - 24 - MIN_PADDING/2, 50, 24, 56));
+		min_dig_sml_one = bitmap_layer_create(GRect(HALF_WIDTH + MIN_PADDING/2, 50, 24, 56));
+
+		layer_add_child(slide_layer, (Layer *)min_dig_sml_ten);
+		layer_add_child(slide_layer, (Layer *)min_dig_sml_one);
 		
 		#define ADD(child_layer) layer_add_child(slide_layer, (Layer *)child_layer)
 	#else
@@ -337,25 +381,25 @@ static void initialise_ui(void) {
 	bitmap_layer_set_bitmap(box_quiet_time, ico_bitmap[5]);
 	ADD(box_quiet_time);
 	
-	#ifdef PBL_RECT
+	#ifdef HAS_OBSTRUCTION
 	GRect unobstucted_bounds = layer_get_unobstructed_bounds(root_layer);
 	is_obstructed = !grect_equal(&unobstucted_bounds, &bounds);
+	unobstructed_set_vis(is_obstructed);
 	if (is_obstructed) {
 	    // Force the slide-frame to be in the correct position
 	    GRect slide_frame = layer_get_frame((Layer *) slide_layer);
-	    slide_frame.origin.y = -(bounds.size.h - unobstucted_bounds.size.h);
+	    slide_frame.origin.y = min(0, unobstucted_bounds.size.h - bounds.size.h + 20);
 	    layer_set_frame((Layer *) slide_layer, slide_frame);
 	    layer_mark_dirty((Layer *) slide_layer);
-	    
-			layer_set_hidden((Layer *)ap_logo, true);
-	    layer_set_hidden((Layer *)min_dig_one, true);
-	    layer_set_hidden((Layer *)min_dig_ten, true);
 	}
 	#endif
 }
 
 static void handle_window_unload(Window* window) {
 	window_destroy(main_win);
+#ifdef HAS_OBSTRUCTION
+	layer_destroy(slide_layer);
+#endif
 	
 	bitmap_layer_destroy(box_blue);
 	bitmap_layer_destroy(box_batt);
@@ -364,7 +408,6 @@ static void handle_window_unload(Window* window) {
 	text_layer_destroy(hour_text);
 	
 	layer_destroy(secs_layer);
-	layer_destroy(slide_layer);
 	
 	#ifndef PBL_ROUND
 	layer_destroy(icon_line);
@@ -373,7 +416,12 @@ static void handle_window_unload(Window* window) {
 
 	bitmap_layer_destroy(min_dig_ten);
 	bitmap_layer_destroy(min_dig_one);
-	
+
+#ifdef HAS_OBSTRUCTION
+	bitmap_layer_destroy(min_dig_sml_ten);
+	bitmap_layer_destroy(min_dig_sml_one);
+#endif
+
 	bitmap_layer_destroy(ap_logo);
 
 	gbitmap_destroy(res_bluetooth_on);
@@ -387,6 +435,9 @@ static void handle_window_unload(Window* window) {
 
 	for (int i=0; i<ARRAY_SIZE(res_digit); i++) {
 		gbitmap_destroy(res_digit[i]);
+#ifdef HAS_OBSTRUCTION
+		gbitmap_destroy(res_digit_sml[i]);
+#endif
 	}
 
 	for (int i=0; i<ARRAY_SIZE(res_batt); i++) {
@@ -424,6 +475,10 @@ void powerdown() {
 	
 	HIDE(min_dig_ten);
 	HIDE(min_dig_one);
+#ifdef HAS_OBSTRUCTION
+	HIDE(min_dig_sml_ten);
+	HIDE(min_dig_sml_one);
+#endif
 
 	HIDE(ap_logo);
 	for (int i=0; i<ARRAY_SIZE(ico_layers); i++) {
@@ -454,7 +509,13 @@ void powerup_logo(void *val) {
 
 void powerup_nums(void *val) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Nums");
-	if ( !is_obstructed ) {
+	#ifdef HAS_OBSTRUCTION
+	if ( is_obstructed ) {
+		SHOW(min_dig_sml_ten);
+		SHOW(min_dig_sml_one);
+	} else 
+	#endif
+	{
 		SHOW(min_dig_ten);
 		SHOW(min_dig_one);
 	}
@@ -657,10 +718,11 @@ static void draw_icon_bg(struct Layer *layer, GContext *ctx) {
 	#endif
 }
 
+#ifdef HAS_OBSTRUCTION
 static void unobstructed_start(GRect final_area, void *context);
 static void unobstructed_anim(AnimationProgress progress, void *context);
 static void unobstructed_end(void *context);
-
+#endif
 
 static void handle_window_return(Window * window) {
 	quiet_time_update();
@@ -668,14 +730,16 @@ static void handle_window_return(Window * window) {
 
 void show_main_window() {
 	initialise_ui();
-	
+
+#ifdef HAS_OBSTRUCTION
   UnobstructedAreaHandlers handlers = {
     .will_change = &unobstructed_start,
     .change = &unobstructed_anim,
     .did_change = &unobstructed_end
   };
 	unobstructed_area_service_subscribe(handlers, NULL);
-  
+#endif
+
 	window_set_window_handlers(main_win, (WindowHandlers) {
 		.unload = handle_window_unload,
 		.appear = handle_window_return,
@@ -701,11 +765,6 @@ void bluetooth_check(bool connected) {
 	} else {
 		bitmap_layer_set_bitmap(box_blue, res_bluetooth_off);
 	}
-}
-
-static void display_num(char num, BitmapLayer *bitmap) {
-	// Display the number in the minute bitmaps.
-	bitmap_layer_set_bitmap(bitmap, res_digit[num - '0']);
 }
 
 static void shuffle_icons(bool force_backlight) {
@@ -787,15 +846,23 @@ static void sleep_update() {
 #endif
 }
 
+#ifdef HAS_OBSTRUCTION
 // Handle animating when quickview appears / unobstructed-area
+
+static void unobstructed_set_vis(bool obstructed) {
+  layer_set_hidden((Layer *)ap_logo, obstructed);
+  layer_set_hidden((Layer *)min_dig_one, obstructed);
+  layer_set_hidden((Layer *)min_dig_ten, obstructed);
+  layer_set_hidden((Layer *)min_dig_sml_one, !obstructed);
+  layer_set_hidden((Layer *)min_dig_sml_ten, !obstructed);
+}
+
 static void unobstructed_start(GRect final_area, void *context) {
   GRect full_bounds = layer_get_bounds((Layer *)root_layer);
   is_obstructed = !grect_equal(&full_bounds, &final_area);
   if (is_obstructed) {
     // Appearing, hide things
-    layer_set_hidden((Layer *)ap_logo, true);
-    layer_set_hidden((Layer *)min_dig_one, true);
-    layer_set_hidden((Layer *)min_dig_ten, true);
+    unobstructed_set_vis(true);
   }
 	// See if the user woke up.
   sleep_update();
@@ -809,9 +876,7 @@ static void unobstructed_end(void *context) {
   is_obstructed = !grect_equal(&full_bounds, &bounds);
   if (!is_obstructed) {
     // Screen is no longer obstructed, show stuff
-    layer_set_hidden((Layer *)ap_logo, false);
-    layer_set_hidden((Layer *)min_dig_one, false);
-    layer_set_hidden((Layer *)min_dig_ten, false);
+    unobstructed_set_vis(false);
     
     // Force the slide-frame to be in the correct position
     GRect slide_frame = layer_get_frame((Layer *) slide_layer);
@@ -829,9 +894,10 @@ static void unobstructed_anim(AnimationProgress progress, void *context) {
 
   GRect slide_frame = layer_get_frame((Layer *) slide_layer);
 
-  slide_frame.origin.y = -(full_bounds.size.h - bounds.size.h);
+  slide_frame.origin.y = min(0, bounds.size.h - full_bounds.size.h + 20);
   layer_set_frame((Layer *) slide_layer, slide_frame);
 }
+#endif
 
 static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 	if ((units_changed & SECOND_UNIT) != 0) {
@@ -851,8 +917,13 @@ static void time_handler(struct tm *tick_time, TimeUnits units_changed) {
 	if ((units_changed & MINUTE_UNIT) != 0) {
 		static char min_char[] = "00";
 		strftime(min_char, sizeof("--"), "%M", tick_time);
-		display_num(min_char[0], min_dig_ten);
-		display_num(min_char[1], min_dig_one);
+
+		bitmap_layer_set_bitmap(min_dig_ten, res_digit[min_char[0] - '0']);
+		bitmap_layer_set_bitmap(min_dig_one, res_digit[min_char[1] - '0']);
+#ifdef HAS_OBSTRUCTION
+		bitmap_layer_set_bitmap(min_dig_sml_ten, res_digit_sml[min_char[0] - '0']);
+		bitmap_layer_set_bitmap(min_dig_sml_one, res_digit_sml[min_char[1] - '0']);
+#endif
 		sleep_update();
 	}
 
@@ -901,6 +972,9 @@ static void init() {
 
 	for (int i=0; i<ARRAY_SIZE(res_digit); i++) {
 		res_digit[i] = gbitmap_create_with_resource(RES_DIGIT_IDS[i]);
+#ifdef HAS_OBSTRUCTION
+		res_digit_sml[i] = gbitmap_create_with_resource(RES_DIGIT_SML_IDS[i]);
+#endif
 	}
 	
 	for (int i=0; i<ARRAY_SIZE(ico_bitmap); i++) {
