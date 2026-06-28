@@ -50,6 +50,9 @@ static GBitmap *res_ap_logo;
 static bool charge_vibe_done = true;
 // Whether the powerup sequence triggered the user light.
 static bool powerup_light_enabled = false;
+#ifdef PBL_RECT
+static bool is_obstructed = false;
+#endif
 
 // If user is detected sleeping, suppress seconds animation.
 #ifdef PBL_HEALTH
@@ -336,14 +339,15 @@ static void initialise_ui(void) {
 	
 	#ifdef PBL_RECT
 	GRect unobstucted_bounds = layer_get_unobstructed_bounds(root_layer);
-	if(!grect_equal(&unobstucted_bounds, &bounds)) {
+	is_obstructed = !grect_equal(&unobstucted_bounds, &bounds);
+	if (is_obstructed) {
 	    // Force the slide-frame to be in the correct position
 	    GRect slide_frame = layer_get_frame((Layer *) slide_layer);
-	    slide_frame.origin.y = -(bounds.size.h - unobstucted_bounds.size.h)*2;
+	    slide_frame.origin.y = -(bounds.size.h - unobstucted_bounds.size.h);
 	    layer_set_frame((Layer *) slide_layer, slide_frame);
 	    layer_mark_dirty((Layer *) slide_layer);
 	    
-		layer_set_hidden((Layer *)ap_logo, true);
+			layer_set_hidden((Layer *)ap_logo, true);
 	    layer_set_hidden((Layer *)min_dig_one, true);
 	    layer_set_hidden((Layer *)min_dig_ten, true);
 	}
@@ -437,7 +441,9 @@ void powerup_lines(void *val) {
 
 void powerup_logo(void *val) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Logo");
-	SHOW(ap_logo);
+	if ( !is_obstructed ) {
+		SHOW(ap_logo);
+	}
 	
 	// Hide everything from powerup_nums to allow switching between them
 	HIDE(min_dig_ten);
@@ -448,8 +454,10 @@ void powerup_logo(void *val) {
 
 void powerup_nums(void *val) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Nums");
-	SHOW(min_dig_ten);
-	SHOW(min_dig_one);
+	if ( !is_obstructed ) {
+		SHOW(min_dig_ten);
+		SHOW(min_dig_one);
+	}
 	SHOW(hour_text);
 	SHOW(icon_bg);
 	if (powerup_light_enabled) {
@@ -782,7 +790,8 @@ static void sleep_update() {
 // Handle animating when quickview appears / unobstructed-area
 static void unobstructed_start(GRect final_area, void *context) {
   GRect full_bounds = layer_get_bounds((Layer *)root_layer);
-  if (!grect_equal(&full_bounds, &final_area)) {
+  is_obstructed = !grect_equal(&full_bounds, &final_area);
+  if (is_obstructed) {
     // Appearing, hide things
     layer_set_hidden((Layer *)ap_logo, true);
     layer_set_hidden((Layer *)min_dig_one, true);
@@ -797,7 +806,8 @@ static void unobstructed_end(void *context) {
   GRect full_bounds = layer_get_bounds((Layer *)root_layer);
   GRect bounds = layer_get_unobstructed_bounds((Layer *)root_layer);
   
-  if (grect_equal(&full_bounds, &bounds)) {
+  is_obstructed = !grect_equal(&full_bounds, &bounds);
+  if (!is_obstructed) {
     // Screen is no longer obstructed, show stuff
     layer_set_hidden((Layer *)ap_logo, false);
     layer_set_hidden((Layer *)min_dig_one, false);
@@ -819,7 +829,7 @@ static void unobstructed_anim(AnimationProgress progress, void *context) {
 
   GRect slide_frame = layer_get_frame((Layer *) slide_layer);
 
-  slide_frame.origin.y = -(full_bounds.size.h - bounds.size.w)*2;
+  slide_frame.origin.y = -(full_bounds.size.h - bounds.size.h);
   layer_set_frame((Layer *) slide_layer, slide_frame);
 }
 
