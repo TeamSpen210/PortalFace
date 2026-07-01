@@ -57,6 +57,8 @@ static GBitmap *res_batt[9];
 const GColor COLOR_BLUE = GColorVividCerulean;
 const GColor COLOR_ORAN = GColorChromeYellow;
 
+const unsigned char APERTURE_LAYOUT[] = "\x00\x00\x00\x15\x00\x00U\x01\x00U\x15\x00U\x05\x02U\x81\x02U\xa0\x02\x15\xa8\n\x05\xaa\n\x81\xaa*\xa0\xaa*\x00\x00\x00";
+
 static GBitmap *res_bluetooth_on;
 static GBitmap *res_bluetooth_off; 
 static GBitmap *res_quiet_time;
