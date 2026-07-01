@@ -256,7 +256,7 @@ static void initialise_ui(void) {
 
 	// seconds bar layer. On rect displays it's constrained, but it covers everything on round.
 	#ifdef PBL_RECT
-		secs_layer = layer_create(GRect(15, 121, 170, 12));
+		secs_layer = layer_create(GRect(15, 121, 172, 12));
 	#else
 		secs_layer = layer_create(grect_inset(
 			bounds, 
@@ -646,7 +646,7 @@ static void draw_sep_line(struct Layer *layer, GContext *ctx) {
 	);
 	#else
 	// Draw the line that separates seconds from the boxes or the testchamber number.
-	graphics_draw_line(ctx, GPoint(0,0), GPoint(170, 0));
+	graphics_draw_line(ctx, GPoint(0,0), GPoint(172, 0));
 	#endif
 }
 
@@ -655,8 +655,9 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 	// Horizontal on rectangular displays, radial on round ones.
 	time_t temp = time(NULL); 
 	struct tm *cur_time = localtime(&temp);
-	graphics_context_set_stroke_color(ctx, GColorBlack);
-	
+
+	GRect bounds = layer_get_frame(layer);
+
 #if defined(PBL_RECT) // Bar-graph display
 	// In powerup mode, limit to max_seconds_bar size at most.
 	int sec_count = cur_time->tm_sec;
@@ -668,18 +669,23 @@ static void draw_seconds(struct Layer *layer, GContext *ctx) {
 		sec_pos = 2;
 	}
 
-	for (int i = 2; i <= 170; i += 2) {
-		if ( i >= sec_pos ) {
-			graphics_context_set_stroke_color(ctx, GColorLightGray);
+	// Just write to the framebuffer directly for efficiency.
+  GBitmap *fb = graphics_capture_frame_buffer(ctx);
+	for (int y = 0; y <= 12; y++) {
+		GBitmapDataRowInfo info = gbitmap_get_data_row_info(fb, bounds.origin.y + y);
+		for (int x = 0; x < 170; x += 2) {
+			GColor color = ( x >= sec_pos ) ? GColorLightGray : GColorBlack;
+			memset(&info.data[bounds.origin.x + x], color.argb, 1);
 		}
-		graphics_draw_line(ctx, GPoint(i, 0), GPoint(i, 12));
 	}
+  graphics_release_frame_buffer(ctx, fb);
+
 #elif defined(PBL_ROUND) // Radial
-	GRect bounds = layer_get_bounds(layer);
+  // Can't use framebuffer here, since we need angled lines.
 	GRect inner = grect_inset(bounds, GEdgeInsets(SECONDS_RADIAL_WIDTH));
-		
+
 	graphics_context_set_antialiased(ctx, true);
-		
+
 	for (int i = 0; i <= SECONDS_RADIAL_COUNT; i += 1) {
 		if ((cur_time -> tm_sec * SECONDS_RADIAL_COUNT / 60 ) + 1 == i) {
 			graphics_context_set_stroke_color(ctx, GColorLightGray);
