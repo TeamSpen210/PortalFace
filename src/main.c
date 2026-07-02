@@ -1,13 +1,26 @@
 #include <pebble.h>
+#ifdef IDE_HACKS
+// Exists in desktop C stdlib, not on Pebble.
+#undef min
+#undef max
+#endif
+
 #ifdef TSPEN_DISPLAY_HIGHRES
 
 #ifdef PBL_RECT
 #define HAS_OBSTRUCTION
 #endif
 
+#ifdef PBL_DEBUG
+#define DEBUG_LOG(fmt, args...)                                \
+	app_log(APP_LOG_LEVEL_DEBUG, __FILE_NAME__, __LINE__, fmt, ## args)
+#else
+#define DEBUG_LOG(fmt, args...)
+#endif
+
 static Window *main_win;
 static BitmapLayer *box_blue;
-static BitmapLayer *box_batt;
+static Layer *box_batt;
 static BitmapLayer *box_apm;
 static BitmapLayer *box_quiet_time;
 static TextLayer *box_date;
@@ -57,6 +70,7 @@ static BitmapLayer *min_dig_sml_one;
 const int QUADRANT = 12;
 const unsigned char BATTERY_LAYOUT[72] = "\x88\x88\x88\x88\x88\x88\x12\x82\x88\x88\x88\x88\x30\x30\x80\x88\x88\x88\x12\x12\x12\x82\x88\x88\x30\x30\x30\x88\x84\x88\x12\x12\x82\x58\x86\x88\x30\x30\x88\x74\x84\x88\x12\x82\x58\x56\x56\x88\x30\x88\x74\x74\x74\x88\x82\x58\x56\x56\x56\x86\x88\x74\x74\x74\x74\x84\x88\x88\x88\x88\x88\x88";
 
+// All info relating to drawing the battery.
 static struct {
 	unsigned char wedges; // 0-8 wedges
 	bool charging; // whether to be blue or orange
@@ -73,6 +87,7 @@ static struct {
 	// [1234------]
 	unsigned char fade;
 } battery_state;
+const int WEDGE_MAX = 6;
 
 const GColor GRADIENT_BLUE[] = {
 	GColorBlack,
@@ -178,33 +193,24 @@ const int RES_DIGIT_SML_IDS[] = {
 };
 #endif
 
-const int RES_BATT_IDS[] = {
-	RESOURCE_ID_IMG_BAT_1,
-	RESOURCE_ID_IMG_BAT_2,
-	RESOURCE_ID_IMG_BAT_3,
-	RESOURCE_ID_IMG_BAT_4,
-	RESOURCE_ID_IMG_BAT_5,
-	RESOURCE_ID_IMG_BAT_6,
-	RESOURCE_ID_IMG_BAT_7,
-	RESOURCE_ID_IMG_BAT_8,
-};
-
 GBitmap *ico_bitmap[26];
 
 BitmapLayer *ico_layers[5];
 
 
-static BitmapLayer **all_box_layers[10] = {
+static BitmapLayer **box_layers_bitmap[8] = {
 	&box_blue,
-	&box_batt,
 	&box_apm,
-	NULL, // Only one which isn't a BitmapLayer
 	&box_quiet_time,
 	&ico_layers[0],
 	&ico_layers[1],
 	&ico_layers[2],
 	&ico_layers[3],
 	&ico_layers[4],
+};
+static int all_box_layers[10] = {
+	0, 1, 2, 3, 4, 5, 6, 7, // Index into box_layers_bitmap
+	-1, -2, // battery and date.
 };
 
 static void quiet_time_update();
@@ -219,6 +225,16 @@ int max(int a, int b) {
 }
 int min(int a, int b) {
 	return a < b ? a : b;
+}
+
+int clamp(int x, int mins, int maxes) {
+	if (x < mins) {
+		return mins;
+	}
+	if (x > maxes) {
+		return maxes;
+	}
+	return x;
 }
 
 GRect box_pos(int off, bool second_row) {
@@ -301,11 +317,8 @@ static void initialise_ui(void) {
 	bitmap_layer_set_bitmap(box_blue, res_bluetooth_off);
 	ADD(box_blue);
 
-	// battery bitmap
-	box_batt = bitmap_layer_create(box_pos(4, false));
-	bitmap_layer_set_compositing_mode(box_batt, GCompOpSet);
-	bitmap_layer_set_background_color(box_batt, COLOR_BLUE);
-	bitmap_layer_set_bitmap(box_batt, res_batt[3]);
+	// battery icon, custom drawing.
+	box_batt = layer_create(box_pos(4, false));
 	ADD(box_batt);
 	
 	// aperture logo
@@ -417,22 +430,22 @@ static void initialise_ui(void) {
 	unobstructed_set_vis(is_obstructed);
 	if (is_obstructed) {
 	    // Force the slide-frame to be in the correct position
-	    GRect slide_frame = layer_get_frame((Layer *) slide_layer);
+	    GRect slide_frame = layer_get_frame(slide_layer);
 	    slide_frame.origin.y = min(0, unobstucted_bounds.size.h - bounds.size.h + 20);
-	    layer_set_frame((Layer *) slide_layer, slide_frame);
-	    layer_mark_dirty((Layer *) slide_layer);
+	    layer_set_frame(slide_layer, slide_frame);
+	    layer_mark_dirty(slide_layer);
 	}
 	#endif
 }
 
 static void handle_window_unload(Window* window) {
-	window_destroy(main_win);
+	window_destroy(window);
 #ifdef HAS_OBSTRUCTION
 	layer_destroy(slide_layer);
 #endif
 	
 	bitmap_layer_destroy(box_blue);
-	bitmap_layer_destroy(box_batt);
+	layer_destroy(box_batt);
 	
 	text_layer_destroy(box_date);
 	text_layer_destroy(hour_text);
@@ -468,10 +481,6 @@ static void handle_window_unload(Window* window) {
 #ifdef HAS_OBSTRUCTION
 		gbitmap_destroy(res_digit_sml[i]);
 #endif
-	}
-
-	for (int i=0; i<ARRAY_SIZE(res_batt); i++) {
-		gbitmap_destroy(res_batt[i]);
 	}
 
 	for (int i=0; i<ARRAY_SIZE(ico_layers); i++) {
@@ -517,7 +526,7 @@ void powerdown() {
 }
 
 void powerup_lines(void *val) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Lines");
+	DEBUG_LOG("Powerup - Lines");
 	#ifndef PBL_ROUND
 	SHOW(icon_line);
 	#endif
@@ -525,7 +534,7 @@ void powerup_lines(void *val) {
 }
 
 void powerup_logo(void *val) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Logo");
+	DEBUG_LOG("Powerup - Logo");
 	if ( !is_obstructed ) {
 		SHOW(ap_logo);
 	}
@@ -538,7 +547,7 @@ void powerup_logo(void *val) {
 }
 
 void powerup_nums(void *val) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Nums");
+	DEBUG_LOG("Powerup - Nums");
 	#ifdef HAS_OBSTRUCTION
 	if ( is_obstructed ) {
 		SHOW(min_dig_sml_ten);
@@ -557,16 +566,24 @@ void powerup_nums(void *val) {
 }
 
 void powerup_box(void *layer) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Box");
+	DEBUG_LOG("Powerup - Box");
 	SHOW(layer);
 
 	if (powerup_light_enabled) {
 		light_enable_interaction(); // Keep light on.
 	}
 }
-void powerup_date(void *) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Date Box");
+void powerup_date(void *val) {
+	DEBUG_LOG("Powerup - Date Box");
 	SHOW(box_date);
+
+	if (powerup_light_enabled) {
+		light_enable_interaction(); // Keep light on.
+	}
+}
+void powerup_batt(void *val) {
+	DEBUG_LOG("Powerup - Battery Box");
+	SHOW(box_batt);
 
 	if (powerup_light_enabled) {
 		light_enable_interaction(); // Keep light on.
@@ -591,7 +608,7 @@ void powerup_progress(void *val) {
 }
 
 void powerup_done(void *val) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Powerup - Complete");
+	DEBUG_LOG("Powerup - Complete");
 
 	max_seconds_bar = 60;
 
@@ -603,7 +620,7 @@ void powerup_done(void *val) {
 
 void powerup_shuffle() {
 	int i, j;
-	BitmapLayer **tmp;
+	int tmp;
 	for (i=9; i>0; i--){
 		j = rand() % (i+1);
 		tmp = all_box_layers[i];
@@ -645,14 +662,18 @@ static void powerup(bool force_backlight) {
 
 	for (int i = 0; i < 10; ++i)
 	{
-		if (all_box_layers[i] == NULL)
+		if (all_box_layers[i] == -1)
+		{
+			app_timer_register(1100 + 10 * i, &powerup_batt, NULL);
+		}
+		else if (all_box_layers[i] == -2)
 		{
 			app_timer_register(1100 + 10 * i, &powerup_date, NULL);
 		}
 		else
 		{
-			BitmapLayer *box = *all_box_layers[i];
-			app_timer_register(1100 + 10 * i, &powerup_box, (void *)box);
+			BitmapLayer *box = *box_layers_bitmap[all_box_layers[i]];
+			app_timer_register(1100 + 10 * i, &powerup_box, box);
 		}
 	}
 
@@ -754,6 +775,99 @@ static void draw_icon_bg(struct Layer *layer, GContext *ctx) {
 	#endif
 }
 
+// Draws a 1/4 of the battery icon.
+// This is ideally inlined four times, with the bools merged.
+// The transform is first flip X/Y, then optionally flip the axes.
+static inline void draw_battery_quadrant(
+	GBitmap *fb, const GColor gradient[4], GPoint origin,
+	bool flipXY, bool flipH, bool flipV,
+	int index
+) {
+	int wedge1amt, wedge2amt;
+	// Index is the location of the first wedge.
+	if ( battery_state.wedges < index ) {
+		wedge1amt = wedge2amt = 0;
+		// TODO: Maybe just directly write color to all pixels?
+	} else if ( battery_state.wedges == index ) {
+		wedge1amt = battery_state.fade;
+		wedge2amt = 0;
+	} else if ( battery_state.wedges - 1 == index ) {
+		wedge1amt = WEDGE_MAX;
+		wedge2amt = battery_state.fade;
+	} else {
+		wedge1amt = wedge2amt = WEDGE_MAX;
+	}
+	GColor colors[8];
+	for( int i = 0; i < 4; ++i ) {
+		// If fade = 0, i=0 -> g=3, i=1 -> g=4
+		// If fade = 6, i=2 -> g=-1, i=3 -> g=0
+		colors[i+0] = gradient[clamp(3 + i - wedge1amt, 0, 3 )];
+		colors[i+4] = gradient[clamp(3 + i - wedge2amt, 0, 3 )];
+	}
+
+	for (int y = 0; y < QUADRANT; y++) {
+		GBitmapDataRowInfo row = gbitmap_get_data_row_info(fb, origin.y + y);
+		for (int x = 0; x < QUADRANT; x++) {
+			int src_x, src_y;
+			if ( flipXY ) {
+				src_x = y;
+				src_y = x;
+			} else {
+				src_x = x;
+				src_y = y;
+			}
+			if ( flipH ) {
+				src_x = (QUADRANT-1) - src_x;
+			}
+			if ( flipV ) {
+				src_y = (QUADRANT-1) - src_y;
+			}
+
+			int off = src_y * QUADRANT + src_x;
+			unsigned char data;
+			if ( off % 2 == 0 ) {
+				data = BATTERY_LAYOUT[off / 2];
+			} else {
+				data = BATTERY_LAYOUT[off / 2] >> 4;
+			}
+			// 0b1000 is set if a background, otherwise 0b0111 is the index.
+			const GColor pixel = (data & 0b1000) ? gradient[3] : colors[data & 0b0111];
+			row.data[origin.x + x] = pixel.argb;
+		}
+	}
+}
+
+static void draw_battery(struct Layer *layer, GContext *ctx) {
+
+  GBitmap *fb = graphics_capture_frame_buffer(ctx);
+	GRect bounds = layer_get_frame(layer);
+
+	const GColor *gradient = battery_state.charging ? GRADIENT_ORAN : GRADIENT_BLUE;
+
+	// Upper-right
+	draw_battery_quadrant(
+		fb, gradient, GPoint(bounds.origin.x + QUADRANT, bounds.origin.y),
+		false, false, false, 0
+		);
+	// Lower-right
+	draw_battery_quadrant(
+		fb, gradient, GPoint(bounds.origin.x + QUADRANT, bounds.origin.y + QUADRANT),
+		true, false, true, 2
+		);
+	// Lower-left
+	draw_battery_quadrant(
+		fb, gradient, GPoint(bounds.origin.x, bounds.origin.y + QUADRANT),
+		false, true, true, 4
+	);
+	// Upper-left
+	draw_battery_quadrant(
+		fb, gradient, GPoint(bounds.origin.x, bounds.origin.y),
+		true, true, false, 6
+	);
+
+  graphics_release_frame_buffer(ctx, fb);
+}
+
 #ifdef HAS_OBSTRUCTION
 static void unobstructed_start(GRect final_area, void *context);
 static void unobstructed_anim(AnimationProgress progress, void *context);
@@ -782,6 +896,7 @@ void show_main_window() {
 	});
 	layer_set_update_proc(secs_layer, &draw_seconds);
 	layer_set_update_proc(secs_line, &draw_sep_line);
+	layer_set_update_proc(box_batt, &draw_battery);
 	
 	layer_set_update_proc(icon_bg, &draw_icon_bg);
 	#ifndef PBL_ROUND
@@ -828,26 +943,35 @@ static void shake_handler(AccelAxisType axis, int32_t dir) {
 
 static void battery_update(BatteryChargeState state) {
 	// We have 0-8 wedges, evenly spread that.
-	// We want the crossover point to happen in-between the wedges, so
-	// Calculate (charge / 100 + 1/16) // 8 -> *= 400/400
-	// = ( 4 * charge + 25 ) / 50;
-	int wedge = (state.charge_percent * 4 + 25) / 50;
-	if (wedge > 8) { // Shouldn't happen, just in case
-		wedge = 8;
+	// Do calculations in the range 0-200, so 12.5% -> 25, and we don't need floats.
+	int doubleperc = state.charge_percent * 2;
+
+	// Test the full transition.
+	// long long doubleperc = time(NULL) % 50 * 4;
+	// if ( doubleperc < 0 )
+	// 	doubleperc += 200;
+
+	battery_state.wedges = doubleperc / 25;
+	if (battery_state.wedges > 7) { // Shouldn't happen, just in case
+		battery_state.wedges = 7;
 	}
 
 	// If charging, flash between icons.
-	if (state.is_charging) {
+	battery_state.charging = state.is_charging;
+	if (battery_state.charging) {
 		time_t temp = time(NULL);
 		struct tm *cur_time = localtime(&temp);
-		if (cur_time -> tm_sec % 2 == 0) {
-			// Special case - if we're showing 8 wedges, oscillate down to 7.
-			wedge = (wedge == 8) ? 7 : wedge + 1;
-		}
+		battery_state.fade = cur_time->tm_sec % 2 ? WEDGE_MAX : 0;
+	} else {
+		// 0-25, remaining for the fade. Fade is 0-6, so we end up just dividing by 4.
+		unsigned int remainder = doubleperc - (battery_state.wedges * 25);
+		battery_state.fade = remainder / (25 / WEDGE_MAX);
 	}
-
-	bitmap_layer_set_background_color(box_batt, state.is_plugged ? COLOR_ORAN : COLOR_BLUE);
-	bitmap_layer_set_bitmap(box_batt, res_batt[wedge]);
+	layer_mark_dirty(box_batt);
+	DEBUG_LOG(
+		"Battery: perc=%lli wedges=%i, fade=%i, charging=%s",
+		doubleperc,	battery_state.wedges, battery_state.fade, battery_state.charging ? "yes": "no"
+	);
 
 	if (state.charge_percent == 100) {
 		// Only trigger vibration if we just switched states.
@@ -1001,11 +1125,6 @@ static void init() {
 	res_am = gbitmap_create_with_resource(RESOURCE_ID_TS_ICO_AM);
 	res_pm = gbitmap_create_with_resource(RESOURCE_ID_TS_ICO_PM);
 
-	res_batt[0] = gbitmap_create_blank(GSize(24, 24), GBitmapFormat8Bit);
-	for (int i=1; i<ARRAY_SIZE(res_batt); i++) {
-		res_batt[i] = gbitmap_create_with_resource(RES_BATT_IDS[i - 1]);
-	}
-
 	for (int i=0; i<ARRAY_SIZE(res_digit); i++) {
 		res_digit[i] = gbitmap_create_with_resource(RES_DIGIT_IDS[i]);
 #ifdef HAS_OBSTRUCTION
@@ -1020,14 +1139,14 @@ static void init() {
 
 int main() {
 	srand(time(NULL));
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Starting up");
+	DEBUG_LOG("Starting up");
 
 	init();
 
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "initialised");
+	DEBUG_LOG("initialised");
 	show_main_window();
 
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Shown window");
+	DEBUG_LOG("Shown window");
 
 	// Get a tm structure
 	time_t temp = time(NULL); 
@@ -1037,7 +1156,7 @@ int main() {
 	time_handler(cur_time, SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT | DAY_UNIT);
 	bluetooth_check(bluetooth_connection_service_peek());
 	battery_update(battery_state_service_peek());
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Done checks");
+	DEBUG_LOG("Done checks");
 
 	tick_timer_service_subscribe(SECOND_UNIT | HOUR_UNIT | MINUTE_UNIT | DAY_UNIT, time_handler);
 
@@ -1046,7 +1165,7 @@ int main() {
 	accel_tap_service_subscribe(shake_handler);
 
 	shuffle_icons(true); // also starts the powerup animation
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Shuffled icons");
+	DEBUG_LOG("Shuffled icons");
 
 	app_event_loop();
 

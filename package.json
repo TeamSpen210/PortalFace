@@ -16,8 +16,6 @@
           "name": "APP_ICON",
           "file": "images/icon.png"
         },
-
-
         {
           "type": "png",
           "name": "IMG_NUM_0",
@@ -172,54 +170,6 @@
           "type": "png",
           "name": "IMG_QUIET_TIME",
           "file": "images/ico_quiet_time.png"
-        },
-        {
-          "type": "png",
-          "name": "IMG_BAT_1",
-          "file": "images/battery/aper_1.png",
-          "targetPlatforms": ["emery", "gabbro"]
-        },
-        {
-          "type": "png",
-          "name": "IMG_BAT_2",
-          "file": "images/battery/aper_2.png",
-          "targetPlatforms": ["emery", "gabbro"]
-        },
-        {
-          "type": "png",
-          "name": "IMG_BAT_3",
-          "file": "images/battery/aper_3.png",
-          "targetPlatforms": ["emery", "gabbro"]
-        },
-        {
-          "type": "png",
-          "name": "IMG_BAT_4",
-          "file": "images/battery/aper_4.png",
-          "targetPlatforms": ["emery", "gabbro"]
-        },
-        {
-          "type": "png",
-          "name": "IMG_BAT_5",
-          "file": "images/battery/aper_5.png",
-          "targetPlatforms": ["emery", "gabbro"]
-        },
-        {
-          "type": "png",
-          "name": "IMG_BAT_6",
-          "file": "images/battery/aper_6.png",
-          "targetPlatforms": ["emery", "gabbro"]
-        },
-        {
-          "type": "png",
-          "name": "IMG_BAT_7",
-          "file": "images/battery/aper_7.png",
-          "targetPlatforms": ["emery", "gabbro"]
-        },
-        {
-          "type": "png",
-          "name": "IMG_BAT_8",
-          "file": "images/battery/aper_8.png",
-          "targetPlatforms": ["emery", "gabbro"]
         },
         {
           "type": "png",
