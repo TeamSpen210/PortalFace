@@ -52,12 +52,40 @@ static BitmapLayer *min_dig_sml_ten;
 static BitmapLayer *min_dig_sml_one;
 #endif
 
-static GBitmap *res_batt[9];
+// Packed data describing the battery timer dial.
+// 12x12 pixels, 
+const int QUADRANT = 12;
+const unsigned char BATTERY_LAYOUT[72] = "\x88\x88\x88\x88\x88\x88\x12\x82\x88\x88\x88\x88\x30\x30\x80\x88\x88\x88\x12\x12\x12\x82\x88\x88\x30\x30\x30\x88\x84\x88\x12\x12\x82\x58\x86\x88\x30\x30\x88\x74\x84\x88\x12\x82\x58\x56\x56\x88\x30\x88\x74\x74\x74\x88\x82\x58\x56\x56\x56\x86\x88\x74\x74\x74\x74\x84\x88\x88\x88\x88\x88\x88";
 
-const GColor COLOR_BLUE = GColorVividCerulean;
-const GColor COLOR_ORAN = GColorChromeYellow;
+static struct {
+	unsigned char wedges; // 0-8 wedges
+	bool charging; // whether to be blue or orange
+	// 0-6, how many pixels to show for the current wedge
+	// We have 4 colours, and a 2x2 dither pattern so 4 displayed
+	// colors. Sliding one against the other, there's 7 distinct states:
+	// [---||||---]
+	// [---|||1234]
+	// [---||1234-]
+	// [---|1234--]
+	// [---1234---]
+	// [--1234----]
+	// [-1234-----]
+	// [1234------]
+	unsigned char fade;
+} battery_state;
 
-const unsigned char APERTURE_LAYOUT[] = "\x00\x00\x00\x15\x00\x00U\x01\x00U\x15\x00U\x05\x02U\x81\x02U\xa0\x02\x15\xa8\n\x05\xaa\n\x81\xaa*\xa0\xaa*\x00\x00\x00";
+const GColor GRADIENT_BLUE[] = {
+	GColorBlack,
+	GColorFromRGB(0, 0, 85),
+	GColorFromRGB(0, 85, 170),
+	GColorFromRGB(0, 170, 255),
+};
+const GColor GRADIENT_ORAN[] = {
+	GColorBlack,
+	GColorFromRGB(85, 0, 0),
+	GColorFromRGB(170, 85, 0),
+	GColorFromRGB(255, 170, 0),
+};
 
 static GBitmap *res_bluetooth_on;
 static GBitmap *res_bluetooth_off; 
