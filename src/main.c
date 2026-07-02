@@ -786,8 +786,12 @@ static inline void draw_battery_quadrant(
 	int wedge1amt, wedge2amt;
 	// Index is the location of the first wedge.
 	if ( battery_state.wedges < index ) {
-		wedge1amt = wedge2amt = 0;
-		// TODO: Maybe just directly write color to all pixels?
+		// Completely empty, just blit the background into all cells.
+		for (int y = origin.y; y < origin.y + QUADRANT; y++) {
+			GBitmapDataRowInfo info = gbitmap_get_data_row_info(fb, y);
+			memset(&info.data[origin.x], gradient[3].argb, QUADRANT);
+		}
+		return;
 	} else if ( battery_state.wedges == index ) {
 		wedge1amt = battery_state.fade;
 		wedge2amt = 0;
