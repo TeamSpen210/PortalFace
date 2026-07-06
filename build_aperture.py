@@ -8,6 +8,7 @@ def main():
     colors = {
         #  1st bit = background, 2nd = wedge 2, 3/4 = index
         (  0, 255,   0): 0b1000,  # Background
+        (  0, 128,   0): 0b1001,  # Aperture
         ( 64,   0,   0): 0b0000,  # Wedge 1a
         (128,   0,   0): 0b0001,  # Wedge 1b
         (192,   0,   0): 0b0010,  # Wedge 1c
@@ -22,13 +23,15 @@ def main():
         for y in range(SIZE)
         for x in range(SIZE)
     ]
-    for y in range(0,SIZE*SIZE, SIZE):
+    for y in range(0, SIZE*SIZE, SIZE):
         print(''.join(map(str, pixels[y:y+SIZE])))
     # 12x12, 4 bits per pixel, one byte per 2 pixels.
     result = bytearray([
         pixels[off] | (pixels[off+1] << 4)
         for off in range(0, len(pixels), 2)
     ])
-    print(f'APERTURE_LAYOUT[{len(result)}]=', ''.join(f'\\x{i:02X}' for i in result))
+    print(f'APERTURE_LAYOUT[{len(result)}]=')
+    for y in range(0, len(result), 6):
+        print('\t', '"', ''.join(f'\\x{i:02X}' for i in result[y: y+6]), '"', sep='')
 
 main()

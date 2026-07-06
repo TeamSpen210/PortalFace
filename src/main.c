@@ -66,9 +66,26 @@ static BitmapLayer *min_dig_sml_one;
 #endif
 
 // Packed data describing the battery timer dial.
-// 12x12 pixels, 
+// 12x12 pixels. Each byte is 2 pixels, so each hex char is a pixel.
+// 0b1000 = background color
+// 0b1001 = aperture logo in middle
+// 0b0000 - 0b0011 = 1st wedge
+// 0b0100 - 0b0111 = 2nd wedge
 const int QUADRANT = 12;
-const unsigned char BATTERY_LAYOUT[72] = "\x88\x88\x88\x88\x88\x88\x12\x82\x88\x88\x88\x88\x30\x30\x80\x88\x88\x88\x12\x12\x12\x82\x88\x88\x30\x30\x30\x88\x84\x88\x12\x12\x82\x58\x86\x88\x30\x30\x88\x74\x84\x88\x12\x82\x58\x56\x56\x88\x30\x88\x74\x74\x74\x88\x82\x58\x56\x56\x56\x86\x88\x74\x74\x74\x74\x84\x88\x88\x88\x88\x88\x88";
+const unsigned char BATTERY_LAYOUT[72] =
+	"\x88\x88\x88\x88\x88\x88"
+	"\x12\x82\x88\x88\x88\x88"
+	"\x30\x30\x80\x88\x88\x88"
+	"\x12\x12\x12\x82\x88\x88"
+	"\x30\x30\x30\x88\x84\x88"
+	"\x12\x12\x82\x58\x86\x88"
+	"\x30\x30\x88\x74\x84\x88"
+	"\x12\x82\x58\x56\x56\x88"
+	"\x38\x88\x74\x74\x74\x88"
+	"\x89\x58\x56\x56\x56\x86"
+	"\x99\x88\x74\x74\x74\x84"
+	"\x98\x89\x88\x88\x88\x88"
+;
 
 // All info relating to drawing the battery.
 static struct {
@@ -786,10 +803,21 @@ static inline void draw_battery_quadrant(
 	int wedge1amt, wedge2amt;
 	// Index is the location of the first wedge.
 	if ( battery_state.wedges < index ) {
-		// Completely empty, just blit the background into all cells.
+		// Completely empty, just blit the background into all cells, then fill the logo.
 		for (int y = origin.y; y < origin.y + QUADRANT; y++) {
 			GBitmapDataRowInfo info = gbitmap_get_data_row_info(fb, y);
 			memset(&info.data[origin.x], gradient[3].argb, QUADRANT);
+		}
+		// This is so simple, we can draw via direct logic.
+		// We just blit two pixels each time.
+		for (int i = 0; i < 3; i++) {
+			int x, y;
+			// This -1 means it does go into the quadrant on our left, but that's just drawing
+			// the same wedge again - harmless.
+			x = flipH ? 11 - i : i - 1;
+			y = flipV ? 2 - i : 9 + i;
+			GBitmapDataRowInfo info = gbitmap_get_data_row_info(fb, origin.y + y);
+			memset(&info.data[origin.x + x], GColorDarkGrayARGB8, 2);
 		}
 		return;
 	} else if ( battery_state.wedges == index ) {
@@ -834,8 +862,10 @@ static inline void draw_battery_quadrant(
 			} else {
 				data = BATTERY_LAYOUT[off / 2] >> 4;
 			}
-			// 0b1000 is set if a background, otherwise 0b0111 is the index.
-			const GColor pixel = (data & 0b1000) ? gradient[3] : colors[data & 0b0111];
+			// 0b1000 is set if a background, otherwise it's the wedges. Then 0b111 is the index.
+			const GColor pixel = (data & 0b1000) ? (
+				data & 0b0001 ? GColorDarkGray : gradient[3]
+			): colors[data & 0b0111];
 			row.data[origin.x + x] = pixel.argb;
 		}
 	}
